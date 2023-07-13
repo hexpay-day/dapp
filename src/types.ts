@@ -31,6 +31,7 @@ export type StakesEndingOnDay = {
   stakeId: string;
   startDay: string;
   stakedDays: string;
+  stakerAddr: string;
   stakeEnd: {
     penalty: string;
     payout: string;
@@ -46,5 +47,9 @@ export type HsiStatusResponse = {
     stakeId: string;
     isHdrnHsi: boolean;
     isHdrnHsiTokenized: boolean;
+    hdrnHsiAddress: string;
+    owner: {
+      id: string;
+    };
   }[];
 }

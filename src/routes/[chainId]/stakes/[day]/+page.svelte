@@ -11,6 +11,7 @@
   $: stakes = $page.data.stakes as Stake[]
   $: unoptimizable = stakes.filter((stake) => !stake.isHsi)
   $: optimizable = stakes.filter((stake) => stake.isHsi)
+  $: endable = stakes.filter((stake) => stake.isEndable)
 
   onMount(() => {
     let id!: NodeJS.Timeout
@@ -39,8 +40,28 @@
       <ul></ul>
     </AccordionItem>
     <AccordionItem>
-      <AccordionHeader slot="header" length={0}>Endable</AccordionHeader>
-      <ul></ul>
+      <AccordionHeader slot="header" length={endable.length}>Endable</AccordionHeader>
+      <ul>
+        {#each endable as item}
+        <li>
+          <pre class="flex">
+            <div class="flex items-center">
+              <input
+                id="checked-checkbox"
+                type="checkbox"
+                value=""
+                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+              <label
+                for="checked-checkbox"
+                class="ml-2 text-sm font-medium text-gray-900 flex">
+                <span class="flex dark:text-gray-300"><Label color="gray">#{_.padStart(item.stakeId, 7, ' ')}</Label> staked <Label color="red">{_.padStart(item.stakedDays.toString(), 4, ' ')}</Label> days {#if item.isHsi}<img width="20" height="20" alt="a white dodecahedron on a blue background" src="/hedron.png" />{:else}{/if}</span>
+              </label>
+            </div>
+          </pre>
+        </li>
+        {/each}
+      </ul>
+      <button on:click={() => console.log('add to sequence')}>Add To Sequence</button>
     </AccordionItem>
     <AccordionItem>
       <AccordionHeader slot="header" length={optimizable.length}>Optimizable</AccordionHeader>
@@ -58,7 +79,7 @@
               <label
                 for="checked-checkbox"
                 class="ml-2 text-sm font-medium text-gray-900 flex">
-                <span class="flex dark:text-gray-300"><Label color="gray">#{_.padStart(item.stakeId, 7, ' ')}</Label> staked <Label color="red">{_.padStart(item.stakedDays.toString(), 4, ' ')}</Label> days {#if item.isHsi}<img width="20" height="20" alt="a white dodecahedron on a blue background" src="/hedron.png" />{:else}{/if}<a href="https://twitter.com/intent/tweet?text={encodeURIComponent('Looks like someone is about to end a #hex stake all by their lonesome. Try adding it to a pool to end it with others and reduce costs at the same time! @hexpay_day hexpay.day')}">Tweet</a></span>
+                <span class="flex dark:text-gray-300"><Label color="gray">#{_.padStart(item.stakeId, 7, ' ')}</Label> staked <Label color="red">{_.padStart(item.stakedDays.toString(), 4, ' ')}</Label> days {#if item.isHsi}<img width="20" height="20" alt="a white dodecahedron on a blue background" src="/hedron.png" />{:else}{/if}<a href="https://twitter.com/intent/tweet?text={encodeURIComponent('Looks like someone is about to end a #hex stake all by their lonesome. Try adding it to hexpay.day to end it with others and reduce block consumption at the same time! @hexpay_day')}">Tweet</a></span>
               </label>
             </div>
           </pre>

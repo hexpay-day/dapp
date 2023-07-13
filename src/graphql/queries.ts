@@ -14,7 +14,8 @@ export const STAKES_ENDING = gql`query ($day: BigInt!) {
   }
 }`
 
-export const STAKE_STATE_ENDING_ON_DAY = gql`query StakeStateEndingOnDay($day: Int!, $limit: Int!, $skip: Int!) {
+export const STAKE_STATE_ENDING_ON_DAY = gql`
+query StakeStateEndingOnDay($day: Int!, $limit: Int!, $skip: Int!) {
   stakeStarts(orderBy: stakeId, orderDirection: asc, limit: $limit, skip: $skip, where: {
     endDay: $day
   }) {
@@ -22,6 +23,7 @@ export const STAKE_STATE_ENDING_ON_DAY = gql`query StakeStateEndingOnDay($day: I
     stakedDays
     startDay
     endDay
+    stakerAddr
     stakeEnd {
       penalty
       payout
@@ -29,7 +31,8 @@ export const STAKE_STATE_ENDING_ON_DAY = gql`query StakeStateEndingOnDay($day: I
   }
 }`
 
-export const STAKE_HSI_STATUS = gql`query GetStakeIsHsi($stakeIds: [Int!]!) {
+export const STAKE_HSI_STATUS = gql`
+query GetStakeIsHsi($stakeIds: [Int!]!) {
   hexstakes(where: {
     isHdrnHsi: true,
     stakeId_in: $stakeIds
@@ -38,5 +41,8 @@ export const STAKE_HSI_STATUS = gql`query GetStakeIsHsi($stakeIds: [Int!]!) {
     isHdrnHsi
     isHdrnHsiTokenized
     hdrnHsiAddress
+    owner {
+      id
+    }
   }
 }`

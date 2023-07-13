@@ -1,4 +1,5 @@
 import type * as types from '../../../../types'
+import * as ethers from 'ethers'
 import * as graphql from '../../../../graphql'
 import _ from 'lodash'
 
@@ -24,11 +25,14 @@ export const load = async ({ params }: types.StakesLoadParams): Promise<types.St
     stakeIds,
   })
   const isHedronMapping = new Set<number>(hexstakes.map(({ stakeId }) => +stakeId))
+  const hsiOwnerMapping = new Map<number, string>(hexstakes.map(({ stakeId, owner }) => [+stakeId, owner.id.toLowerCase()]))
+  const contract = ethers.constants.AddressZero.toLowerCase()
   const stakes = all.map((stake) => ({
     lockedDay: stake.startDay,
     stakedDays: stake.stakedDays,
     stakeId: stake.stakeId,
     isHsi: isHedronMapping.has(+stake.stakeId),
+    isEndable: stake.stakerAddr.toLowerCase() === contract || hsiOwnerMapping.get(+stake.stakeId) === contract,
   }))
   return {
     stakes,
