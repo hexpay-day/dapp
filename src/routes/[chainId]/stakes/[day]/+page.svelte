@@ -58,7 +58,7 @@
               <label
                 for="checked-checkbox"
                 class="ml-2 text-sm font-medium text-gray-900 flex">
-                <span class="flex dark:text-gray-300"><Label color="gray">#{_.padStart(item.stakeId, 7, ' ')}</Label> staked <Label color="red">{_.padStart(item.stakedDays.toString(), 4, ' ')}</Label> days {#if item.isHsi}<img width="20" height="20" alt="a white dodecahedron on a blue background" src="/hedron.png" />{:else}{/if}<a href="https://twitter.com/home?status={encodeURIComponent('Looks like someone is about to end a #hex stake all by their lonesome. Try adding it to a pool to end it with others and reduce costs at the same time!')}">Tweet</a></span>
+                <span class="flex dark:text-gray-300"><Label color="gray">#{_.padStart(item.stakeId, 7, ' ')}</Label> staked <Label color="red">{_.padStart(item.stakedDays.toString(), 4, ' ')}</Label> days {#if item.isHsi}<img width="20" height="20" alt="a white dodecahedron on a blue background" src="/hedron.png" />{:else}{/if}<a href="https://twitter.com/intent/tweet?text={encodeURIComponent('Looks like someone is about to end a #hex stake all by their lonesome. Try adding it to a pool to end it with others and reduce costs at the same time! @hexpay_day hexpay.day')}">Tweet</a></span>
               </label>
             </div>
           </pre>

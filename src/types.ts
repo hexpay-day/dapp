@@ -26,17 +26,19 @@ export type StakeStart = {
   stakeShares: string;
 }
 
+export type StakesEndingOnDay = {
+  endDay: string;
+  stakeId: string;
+  startDay: string;
+  stakedDays: string;
+  stakeEnd: {
+    penalty: string;
+    payout: string;
+  };
+}
+
 export type StakesEndingOnDayResponse = {
-  stakeStarts: {
-    endDay: string;
-    stakeId: string;
-    startDay: string;
-    stakedDays: string;
-    stakeEnd: {
-      penalty: string;
-      payout: string;
-    };
-  }[];
+  stakeStarts: StakesEndingOnDay[];
 }
 
 export type HsiStatusResponse = {

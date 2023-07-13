@@ -8,7 +8,7 @@ export const load = async ({ params }: types.StakesLoadParams): Promise<types.St
   const client = graphql.getHexByChainId(chainId)
   const hedronClient = graphql.getHedronByChainId(chainId)
   let hasMore = true
-  let all = []
+  let all: types.StakesEndingOnDay[] = []
   const limit = 100
   do {
     const { stakeStarts } = await client.request<types.StakesEndingOnDayResponse>(graphql.queries.STAKE_STATE_ENDING_ON_DAY, {
@@ -19,7 +19,7 @@ export const load = async ({ params }: types.StakesLoadParams): Promise<types.St
     all.push(...stakeStarts)
     hasMore = stakeStarts.length === limit
   } while (hasMore);
-  const stakeIds = _.map(all, 'stakeId').map((num) => +num)
+  const stakeIds = all.map(({ stakeId }) => +stakeId)
   const { hexstakes } = await hedronClient.request<types.HsiStatusResponse>(graphql.queries.STAKE_HSI_STATUS, {
     stakeIds,
   })
