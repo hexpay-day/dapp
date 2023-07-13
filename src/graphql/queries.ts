@@ -37,5 +37,6 @@ export const STAKE_HSI_STATUS = gql`query GetStakeIsHsi($stakeIds: [Int!]!) {
     stakeId
     isHdrnHsi
     isHdrnHsiTokenized
+    hdrnHsiAddress
   }
 }`
