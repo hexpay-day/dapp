@@ -4,12 +4,14 @@
   import * as dayStores from '../../../../stores/day'
 	import { onMount } from 'svelte';
   import { page } from '$app/stores';
-  import type { Stake } from 'knex/types/tables'
+  // import type { Stake } from 'knex/types/tables'
   import { AccordionItem, Accordion, Label } from 'flowbite-svelte'
   import AccordionHeader from '../../../../components/AccordionHeader.svelte'
+  import StartStake from '../../../../components/StartStake.svelte'
+	import type { StakeInfo } from '../../../../types';
 
-  $: stakes = $page.data.stakes as Stake[]
-  $: unoptimizable = stakes.filter((stake) => !stake.isHsi)
+  $: stakes = $page.data.stakes as StakeInfo[]
+  $: unoptimizable = stakes.filter((stake) => !stake.isHsi && !stake.isEndable)
   $: optimizable = stakes.filter((stake) => stake.isHsi)
   $: endable = stakes.filter((stake) => stake.isEndable)
 
@@ -35,6 +37,10 @@
     <a class="px-2" href="{`${parseInt($page.params.day) + 1}`}">&nbsp;&gt;</a>
   </div>
   <Accordion>
+    <AccordionItem>
+      <AccordionHeader slot="header">Start Stake</AccordionHeader>
+      <StartStake />
+    </AccordionItem>
     <AccordionItem>
       <AccordionHeader slot="header" length={0}>Optimized</AccordionHeader>
       <ul></ul>
@@ -79,7 +85,7 @@
               <label
                 for="checked-checkbox"
                 class="ml-2 text-sm font-medium text-gray-900 flex">
-                <span class="flex dark:text-gray-300"><Label color="gray">#{_.padStart(item.stakeId, 7, ' ')}</Label> staked <Label color="red">{_.padStart(item.stakedDays.toString(), 4, ' ')}</Label> days {#if item.isHsi}<img width="20" height="20" alt="a white dodecahedron on a blue background" src="/hedron.png" />{:else}{/if}<a href="https://twitter.com/intent/tweet?text={encodeURIComponent('Looks like someone is about to end a #hex stake all by their lonesome. Try adding it to hexpay.day to end it with others and reduce block consumption at the same time! @hexpay_day')}">Tweet</a></span>
+                <span class="flex dark:text-gray-300"><Label color="gray">#{_.padStart(item.stakeId, 7, ' ')}</Label> staked <Label color="red">{_.padStart(item.stakedDays.toString(), 4, ' ')}</Label> days {#if item.isHsi}<img width="20" height="20" alt="a white dodecahedron on a blue background" src="/hedron.png" title="{item.hsiAddress}" />{:else}{/if}<a href="https://twitter.com/intent/tweet?text={encodeURIComponent('Looks like someone is about to end a #hex stake all by their lonesome. Try adding it to hexpay.day to end it with others and reduce block consumption at the same time! @hexpay_day')}">Tweet</a></span>
               </label>
             </div>
           </pre>

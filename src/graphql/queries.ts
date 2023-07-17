@@ -1,6 +1,7 @@
 import { gql } from "graphql-request";
 
-export const STAKES_ENDING = gql`query ($day: BigInt!) {
+export const STAKES_ENDING = gql`
+query StakesEnding($day: BigInt!) {
   stakeStarts(first: 1000, where: {
     endDay: $day
   }) {

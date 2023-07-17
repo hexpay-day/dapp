@@ -9,6 +9,7 @@ export type StakesLoadParams = {
 
 export type StakesDayResponse = {
   stakes: Stake[];
+  day: bigint;
 }
 
 export type PropertiesAsStrings<T> = {
@@ -52,4 +53,14 @@ export type HsiStatusResponse = {
       id: string;
     };
   }[];
+}
+
+export type StakeInfo = {
+  stakeId: string;
+  isHsi: boolean;
+  isEndable: boolean;
+  owner: string;
+  hsiAddress: string;
+  stakedDays: number;
+  lockedDay: number;
 }

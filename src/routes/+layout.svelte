@@ -1,10 +1,12 @@
 <script>
   import "../app.css";
   import { DarkMode, Footer, FooterCopyright } from 'flowbite-svelte';
+  import ConnectWallet from '../components/ConnectWallet.svelte'
 </script>
 
 <div class="pb-16">
   <DarkMode />
+  <ConnectWallet />
   <slot />
   <Footer class="fixed bottom-0 left-0 w-full rounded-none">
     <div class="container">

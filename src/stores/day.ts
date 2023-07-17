@@ -3,6 +3,8 @@ import * as contracts from './contracts'
 
 export const day = writable(0n)
 
+export const targetDay = writable(1n)
+
 export const dayToIso = (day = 0n) => {
   const DAY_MS = 24n * 60n * 60n * 1_000n
   const daysFrom0 = 18233n + day
@@ -11,7 +13,9 @@ export const dayToIso = (day = 0n) => {
 }
 
 export const getCurrentDay = async () => {
-  const currentDay = await contracts.Hex.currentDay()
+  const mainnet = contracts.all(1)
+  const currentDay = await mainnet.hex.currentDay()
+  // console.log('current day', currentDay.toBigInt())
   day.update(() => currentDay.toBigInt())
   return currentDay.toBigInt()
 }

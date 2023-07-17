@@ -1,4 +1,5 @@
 <script lang="ts">
-  export let length: number
+  import _ from 'lodash'
+  export let length: number | undefined = undefined
 </script>
-<p><i class="font-light">{length}</i>: <slot /></p>
+<p>{#if _.isNumber(length)}<i class="font-light">{length}</i>: {/if}<slot /></p>
