@@ -7,6 +7,16 @@ export type StakesLoadParams = {
   };
 }
 
+export type ChainIdParams = {
+  params: {
+    chainId: string;
+  };
+}
+
+export type ChainIdResponse = {
+  chainId: number;
+}
+
 export type StakesDayResponse = {
   stakes: Stake[];
   day: bigint;
