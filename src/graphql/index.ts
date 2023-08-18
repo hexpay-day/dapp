@@ -9,7 +9,7 @@ const hexUrls = new Map<number, string>([
 
 const hedronUrls = new Map<number, string>([
   [1, 'https://api.thegraph.com/subgraphs/name/seminatempus/hedron-v2'],
-  [369, 'https://graph.pulsefusion.io/subgraphs/name/hedron/graphql'],
+  [369, 'https://graph.pulsefusion.io/subgraphs/name/hedron'],
   // [943, 'https://graph.v4.testnet.pulsechain.com/subgraphs/name/Codeakk/Hex'],
 ])
 

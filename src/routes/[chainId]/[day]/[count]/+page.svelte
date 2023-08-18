@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
   import _ from 'lodash'
   // import * as stakeStores from '../../../../stores/stakes'
   import * as dayStores from '../../../../stores/day'
@@ -124,4 +124,19 @@
   :global(html) {
     background-color: theme(colors.gray.100);
   }
-</style>
+</style> -->
+<script lang="ts">
+  import Filters from '../../../../components/Filters.svelte'
+  import FilteredStakes from '../../../../components/FilteredStakes.svelte'
+  import * as filteredStakeStore from '../../../../stores/filtered-stakes'
+  import * as filtersStore from '../../../../stores/filters'
+
+  import { page } from '$app/stores';
+
+  $: filtersStore.startDate.set(filtersStore.dayToDate(+$page.data.day))
+  $: filtersStore.offsetDays.set($page.data.count)
+  $: filteredStakeStore.all.set($page.data.stakes)
+</script>
+
+<Filters />
+<FilteredStakes />

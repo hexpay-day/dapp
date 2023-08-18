@@ -1,10 +1,16 @@
-import { writable } from 'svelte/store'
+import { get, writable } from 'svelte/store'
 import * as ethers from 'ethers'
 
 export const connected = writable(false)
-export const chainId = writable(0)
-export const address = writable(ethers.constants.AddressZero)
+export const chainId = writable<number>(0)
+export const address = writable<string>(ethers.constants.AddressZero)
 export const signer = writable<ethers.providers.JsonRpcSigner | null>(null)
+
+export const chains = new Map<number, string>([
+  [1, 'Ethereum'],
+  [369, 'Pulsechain'],
+  [943, 'Pulsechain Testnet'],
+])
 
 export const provider = () => {
   return new ethers.providers.Web3Provider(window.ethereum)
@@ -16,14 +22,14 @@ export const facilitateConnect = async () => {
   const s = p.getSigner()
   const addr = await s.getAddress()
   const chId = await s.getChainId()
-  address.update(() => addr)
-  signer.update(() => s)
-  connected.update(() => true)
-  chainId.update(() => chId)
+  address.set(addr)
+  signer.set(s)
+  connected.set(true)
+  chainId.set(chId)
 }
 
 export const facilitateDisconnect = async () => {
-  address.update(() => ethers.constants.AddressZero)
-  signer.update(() => null)
-  connected.update(() => false)
+  address.set(ethers.constants.AddressZero)
+  signer.set(null)
+  connected.set(false)
 }

@@ -1,17 +1,19 @@
 <script lang="ts">
-  import { connected, address, facilitateConnect } from '../stores/web3'
+	import { elipsisAddress } from '../stores/addresses';
+  import * as web3Store from '../stores/web3'
 	import { Button } from 'flowbite-svelte';
   const connect = async () => {
-    await facilitateConnect()
+    await web3Store.facilitateConnect()
   }
   const disconnect = async () => {
-    // await disconnectWagmi()
+    await web3Store.facilitateDisconnect()
   }
-  // $: console.log($address)
+  $: connected = web3Store.connected
+  $: address = web3Store.address
 </script>
 
 {#if $connected}
-<Button on:click={disconnect}>Disconnect {$address.slice(0, 8)}...{$address.slice(-6)}</Button>
+<Button on:click={disconnect}>Disconnect {elipsisAddress($address)}</Button>
 {:else}
 <Button on:click={connect}>Connect</Button>
 {/if}

@@ -4,6 +4,7 @@ export type StakesLoadParams = {
   params: {
     chainId: string;
     day: string;
+    count: string;
   };
 }
 
@@ -19,7 +20,9 @@ export type ChainIdResponse = {
 
 export type StakesDayResponse = {
   stakes: Stake[];
-  day: bigint;
+  day: number;
+  chainId: number;
+  count: number;
 }
 
 export type PropertiesAsStrings<T> = {

@@ -1,24 +1,33 @@
-import { get, writable } from "svelte/store";
+import { derived, get, writable } from "svelte/store";
 import { provider } from "./web3";
 import { ethers } from "ethers";
 import _ from "lodash";
 
-export const endable = writable<boolean>(true)
-export const pastStakes = writable<boolean>(false)
+export const endable = writable<boolean>(false)
 
-export const endableChanged = () => {}
-export const pastChanged = () => {}
+export const endableChanged = (checked: boolean) => {
+  endable.set(checked)
+}
+export const optimizable = writable<boolean>(true)
+export const onlyOptimizableChanged = (checked: boolean) => {
+  optimizable.set(checked)
+}
 
-type Address = {
+export type Address = {
   hash: string;
   ens: string | null | undefined;
-};
+}
+
 export const owners = writable<Address[]>([])
 export const ownerValue = writable<string>('')
 export const isOwnerValueValid = writable<null | boolean>(null)
 export const addAddressToOwner = async (submission: boolean) => {
+  const hash = get(ownerValue)
+  return await addAddressToOwnerRaw(hash, submission)
+}
+export const addAddressToOwnerRaw = async (_hash: string, submission: boolean) => {
+  let hash = _hash
   const p = provider()
-  let hash = get(ownerValue)
   let ens
   // let isValid: null | boolean = null
   if (!ownerValue) {
@@ -88,4 +97,26 @@ export const removeStakeId = (stakeId: number) => {
   stakeIds.update((list) => (
     list.filter((item) => item !== stakeId)
   ))
+}
+
+export const launchDate = new Date('2019-12-03')
+export const DAY = 1000*60*60*24
+export const today = () => {
+  let now = +(new Date())
+  now -= now % DAY
+  return new Date(now)
+}
+export const maxOffsetDays = 30
+export const defaultOffsetDays = 2
+export const offsetDays = writable<number>(defaultOffsetDays)
+export const startDate = writable<Date>(today())
+export const untilDate = derived([offsetDays, startDate], ([$offsetDays, $startDate]) => {
+  return new Date(+$startDate + (DAY * $offsetDays))
+})
+export const maxDate = new Date(+today() + (DAY * 5_555))
+export const dateToDay = (d: Date) => {
+  return Math.floor((+d - +launchDate) / DAY)
+}
+export const dayToDate = (day: number) => {
+  return new Date(+launchDate + (day * DAY))
 }
