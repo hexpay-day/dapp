@@ -98,7 +98,7 @@
     browseWithoutSelecting
     closeOnSelection />
   <Button
-    disabled={$address !== ethers.constants.AddressZero && !!$owners.find((owner) => owner.hash === $address)}
+    disabled={$address === ethers.constants.AddressZero || !!$owners.find((owner) => owner.hash === $address)}
     on:click={() => filtersStore.addAddressToOwnerRaw($address, true)}>Show Own</Button>
 </div>
 <div class="grid grid-cols-2 gap-4 my-2">

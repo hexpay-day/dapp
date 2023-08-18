@@ -50,7 +50,6 @@ export const load = async ({ params }: types.StakesLoadParams): Promise<types.St
   const endDay = day + count
   const hedronClient = graphql.getHedronByChainId(chainId)
   let all: types.StakesEndingOnDay[] = []
-  console.log(day, endDay)
   do {
     const allInDay = await cache.fetch(`${chainId}-${day}`) as types.StakesEndingOnDay[]
     day++
