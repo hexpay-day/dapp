@@ -13,10 +13,21 @@ export type Stake = {
   isHedron: boolean;
   stakeId: number;
 }
+export enum TimelineTypes {
+  OTHER,
+  END,
+  RESTART,
+  GOOD_ACCOUNT,
+}
+
+export type StakeAction = {
+  type: TimelineTypes;
+  stake: Stake;
+}
 
 export const all = writable<Stake[]>([])
 
-export const timeline = writable<Stake[]>([])
+export const timeline = writable<StakeAction[]>([])
 
 export const isEndable = (stake: Stake) => {
   return stake.owner === addressStore.StakeManager
@@ -32,14 +43,17 @@ export const isOptimizable = (stake: Stake) => {
 
 export const removeFromTimeline = (stakeId: number) => {
   timeline.update((list) => (
-    list.filter((item) => item.stakeId !== stakeId)
+    list.filter((item) => item.stake.stakeId !== stakeId)
   ))
 }
 
-export const addStakeToTimeline = (stake: Stake) => {
+export const addStakeToTimeline = (type: TimelineTypes, stake: Stake) => {
   removeFromTimeline(stake.stakeId)
   timeline.update((list) => (
-    list.concat(stake)
+    list.concat({
+      type,
+      stake,
+    })
   ))
 }
 

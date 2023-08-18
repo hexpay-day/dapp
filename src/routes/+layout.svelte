@@ -5,29 +5,24 @@
   import * as web3Store from '../stores/web3'
   import {
     DarkMode,
-    Footer,
-    FooterCopyright,
     Dropdown,
     DropdownItem,
     Button,
-    Spinner,
   } from 'flowbite-svelte'
   import {
     Icon,
   } from 'flowbite-svelte-icons'
-	import { today } from "../stores/filters";
-  import { navigating } from '$app/stores';
+  import Footer from '../components/Footer.svelte'
+	import NavigatingIndicator from "../components/NavigatingIndicator.svelte";
 
   $: dropdownChains = [...web3Store.chains.entries()].filter(([current]) => $page.data.chainId !== current)
 </script>
 
-<div class="pb-16">
+<div>
   <div class="container m-auto flex justify-between">
     <div class="m-1">
       <DarkMode />
-      {#if $navigating}
-      <Spinner size="6" />
-      {/if}
+      <NavigatingIndicator />
     </div>
     <div class="gap-2 my-1">
       <ConnectWallet />
@@ -44,12 +39,7 @@
   <div class="container m-auto py-2">
     <slot />
   </div>
-  <Footer class="fixed bottom-0 left-0 w-full rounded-none">
-    <div class="container m-auto">
-      <FooterCopyright href="/" by="HexPay.Day" year={today().getFullYear()} />
-    </div>
-  </Footer>
-  <div class="w-full h-4"></div>
+  <Footer />
 </div>
 
 <style lang="postcss">

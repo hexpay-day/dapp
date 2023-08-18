@@ -4,6 +4,7 @@
   import * as filteredStakesStore from '../stores/filtered-stakes'
   import * as addressesStore from '../stores/addresses'
   import EndSettings from './EndSettings.svelte'
+  import { icons } from 'flowbite-svelte-icons'
 
   $: filtered = filteredStakesStore.filtered
 
@@ -12,6 +13,9 @@
       addressesStore.perpetuals.has(v.owner) ? `<span class="w-6 inline-block"><img width="20" height="20" alt="a gold letter m on a blue background with faded hexagons and a gold border" src="/maximus.png" title="${v.custodian}" /></span>` : '<span class="w-6 inline-block"></span>'
     )
   }
+  const sizeMultiplier = 1.4
+  const iconExpanded = `<span class="flex justify-center items-center ml-auto w-6 h-6"><svg viewBox="0 0 ${+icons['chevron-down-solid'].width} ${+icons['chevron-down-solid'].height}" height="${+icons['chevron-down-solid'].height * sizeMultiplier}" width="${+icons['chevron-down-solid'].width * sizeMultiplier}">${icons['chevron-down-solid'].svg}</svg></span>`
+  const iconExpand = `<span class="flex justify-center items-center ml-auto w-6 h-6"><svg viewBox="0 0 ${+icons['chevron-up-solid'].width} ${+icons['chevron-up-solid'].height}" height="${+icons['chevron-up-solid'].height * sizeMultiplier}" width="${+icons['chevron-up-solid'].width * sizeMultiplier}">${icons['chevron-up-solid'].svg}</svg></span>`
 </script>
 
 <div>
@@ -21,6 +25,8 @@
     showExpandIcon
     classNameTbody="text-monospace"
     rowKey="stakeId"
+    {iconExpanded}
+    {iconExpand}
     columns={[{
       key: 'stakeId',
       title: 'Stake Id',
@@ -43,7 +49,9 @@
       parseHTML: true,
     }]}>
       <svelte:fragment slot="expanded" let:row>
-        <EndSettings stake={row} />
+        <div class="pb-4 pt-2">
+          <EndSettings stake={row} />
+        </div>
       </svelte:fragment>
     </SvelteTable>
 </div>
