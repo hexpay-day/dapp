@@ -126,13 +126,14 @@
   }
 </style> -->
 <script lang="ts">
-  import Filters from '../../../../components/Filters.svelte'
-  import FilteredStakes from '../../../../components/FilteredStakes.svelte'
-  import * as filteredStakeStore from '../../../../stores/filtered-stakes'
-  import * as filtersStore from '../../../../stores/filters'
+  import Filters from '../../../../../components/Filters.svelte'
+  import FilteredStakes from '../../../../../components/FilteredStakes.svelte'
+  import * as filteredStakeStore from '../../../../../stores/filtered-stakes'
+  import * as filtersStore from '../../../../../stores/filters'
 
   import { page } from '$app/stores';
 
+  // $: console.log($page.data)
   $: filtersStore.startDate.set(filtersStore.dayToDate(+$page.data.day))
   $: filtersStore.offsetDays.set($page.data.count)
   $: filteredStakeStore.all.set($page.data.stakes)

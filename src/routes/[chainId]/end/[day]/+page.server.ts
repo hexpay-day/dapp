@@ -1,5 +1,5 @@
 import { redirect } from "@sveltejs/kit"
-import { getCurrentDay } from "../../../stores/day"
+import { getCurrentDay } from "../../../../stores/day"
 
 export const load = async ({ params }: { params: { chainId: string; day: string } }) => {
   const chainId = +params.chainId || 1

@@ -14,6 +14,7 @@ export const fetchData = async (chainId: number, address: string) => {
   if (ethers.constants.AddressZero === address) {
     return
   }
+  // console.log('collecting for %o on %o', address, chainId)
   const c = contracts.all(chainId)
   const [bal, dep, iso] = await Promise.all([
     c.hex.balanceOf(address),

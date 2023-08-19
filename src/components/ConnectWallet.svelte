@@ -1,18 +1,24 @@
 <script lang="ts">
+	import { page } from '$app/stores';
 	import { elipsisAddress } from '../stores/addresses';
-  import * as web3Store from '../stores/web3'
+  import {
+    chainId,
+    connected,
+    address,
+    facilitateConnect,
+    facilitateDisconnect,
+  } from '../stores/web3'
 	import { Button } from 'flowbite-svelte';
   const connect = async () => {
-    await web3Store.facilitateConnect()
+    await facilitateConnect()
   }
   const disconnect = async () => {
-    await web3Store.facilitateDisconnect()
+    await facilitateDisconnect()
   }
-  $: connected = web3Store.connected
-  $: address = web3Store.address
+  $: trulyConnected = $connected && $page.data.chainId === $chainId
 </script>
 
-{#if $connected}
+{#if trulyConnected}
 <Button on:click={disconnect}>Disconnect {elipsisAddress($address)}</Button>
 {:else}
 <Button on:click={connect}>Connect</Button>

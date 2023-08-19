@@ -2,7 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   export let selected: string | number | null = null
   export let options: {value: string | number, text: string}[] = []
-  $: console.log(selected)
+  // $: console.log(selected)
   const dispatch = createEventDispatcher()
 </script>
 <div class="flex">

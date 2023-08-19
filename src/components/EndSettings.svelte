@@ -23,8 +23,10 @@
 </script>
 
 <div class="flex">
-  {#if !filteredStakesStore.isEndable(stake)}
-    Stake Not Endable
+  {#if !filteredStakesStore.isOptimizable(stake)}
+  <Button disabled>Not Optimizable</Button>
+  {:else if !filteredStakesStore.isEndable(stake)}
+  <Button disabled>Not Endable</Button>
   {:else}
     {#if $timeline.find(({ stake: target }) => stake.stakeId === target.stakeId)}
       <Button size="sm" on:click={() => {
@@ -38,6 +40,7 @@
         <DropdownItem on:click={() => addStakeToTimeline(TimelineTypes.GOOD_ACCOUNT, stake)}>Good Account</DropdownItem>
         <DropdownItem on:click={() => addStakeToTimeline(TimelineTypes.END, stake)}>End Stake</DropdownItem>
         {#if $address === stake.owner}
+        <!-- optimized pathway that skips all checks -->
         <DropdownItem on:click={() => addStakeToTimeline(TimelineTypes.RESTART, stake)}>Restart Stake</DropdownItem>
         {/if}
       </Dropdown>

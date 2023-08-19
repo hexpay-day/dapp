@@ -4,7 +4,7 @@
     Icon,
   } from 'flowbite-svelte-icons'
 </script>
-<footer class="bg-white md:flex md:items-center md:justify-between dark:bg-gray-800 bottom-0 left-0 w-full rounded-none p-2 shadow-inner sticky">
+<footer class="bg-white md:flex md:items-center md:justify-between dark:bg-gray-800 bottom-0 left-0 w-full rounded-none p-2 shadow-inner fixed">
   <div class="container m-auto flex justify-between">
     <span class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
       <span class="p-1">

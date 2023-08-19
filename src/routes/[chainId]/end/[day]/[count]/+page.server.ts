@@ -1,9 +1,9 @@
-import type * as types from '../../../../types'
-import * as graphql from '../../../../graphql'
+import type * as types from '../../../../../types'
+import * as graphql from '../../../../../graphql'
 import _ from 'lodash'
 import { LRUCache } from 'lru-cache'
 import { ethers } from 'ethers'
-import * as web3Store from '../../../../stores/web3'
+import * as web3Store from '../../../../../stores/web3'
 
 const getAllInDay = async (chainId: number, day: number) => {
   const client = graphql.getHexByChainId(chainId)

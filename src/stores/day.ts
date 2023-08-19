@@ -1,9 +1,9 @@
 import { writable } from "svelte/store";
 import * as contracts from './contracts'
 
-export const day = writable(0n)
+export const currentDay = writable(0)
 
-export const targetDay = writable(1n)
+export const targetDay = writable(1)
 
 export const dayToIso = (day = 0n) => {
   const DAY_MS = 24n * 60n * 60n * 1_000n
@@ -14,8 +14,7 @@ export const dayToIso = (day = 0n) => {
 
 export const getCurrentDay = async () => {
   const mainnet = contracts.all(1)
-  const currentDay = await mainnet.hex.currentDay()
-  // console.log('current day', currentDay.toBigInt())
-  day.update(() => currentDay.toBigInt())
-  return currentDay.toBigInt()
+  const hexCurrentDay = await mainnet.hex.currentDay()
+  currentDay.update(() => hexCurrentDay.toNumber())
+  return hexCurrentDay.toNumber()
 }

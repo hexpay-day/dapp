@@ -40,66 +40,97 @@
   } = filtersStore
   const logEndableChanged = (evt: Event) => endableChanged((evt.target as any).checked)
   const logOptimizableChanged = (evt: Event) => onlyOptimizableChanged((evt.target as any).checked)
-  $: baseUrl = `/${$page.data.chainId}/${dateToDay(today())}`
+  $: baseUrl = `/${$page.data.chainId}/end/${dateToDay(today())}`
+  type Params = {
+    chainId: number;
+    day: number;
+    offset: number;
+  }
+  const endUrl = (params: Params) => {
+    return `/${params.chainId}/end/${params.day}/${params.offset}`
+  }
 </script>
 
-<div class="flex gap-4 my-2">
-  <Toggle checked={$optimizable} on:change={logOptimizableChanged}>Only Optimizable</Toggle>
-  <Toggle checked={$endable} on:change={logEndableChanged}>Only Endable</Toggle>
-  <DateInput
-    bind:value={$startDate}
-    on:select={() => {
-      const day = dateToDay($startDate)
-      goto(`/${$page.data.chainId}/${day}/${$offsetDays}`, {
-        keepFocus: true,
-        replaceState: true,
-        noScroll: true,
-        invalidateAll: true,
-      })
-    }}
-    max={maxDate}
-    min={launchDate}
-    format="yyyy-MM-dd"
-    class="flex rounded"
-    browseWithoutSelecting
-    closeOnSelection />
-  <a href="{baseUrl}/{$page.data.count}">
-    <Button
-      size="md"
-      disabled={+($startDate) === +today() && +($untilDate) === +today()}
-      on:click={() => {
-        filtersStore.startDate.set(today())
-        filtersStore.offsetDays.set(filtersStore.defaultOffsetDays)
-        goto(`/${$page.data.chainId}/${dateToDay(today())}/${filtersStore.defaultOffsetDays}`, {
+<div class="flex gap-4 my-2 lg:flex-row flex-col">
+  <div class="flex gap-4">
+    <Toggle checked={$optimizable} on:change={logOptimizableChanged}>Only Optimizable</Toggle>
+    <Toggle checked={$endable} on:change={logEndableChanged}>Only Endable</Toggle>
+  </div>
+  <div class="flex gap-4">
+    <DateInput
+      bind:value={$startDate}
+      on:select={() => {
+        const day = dateToDay($startDate)
+        const url = endUrl({
+          chainId: $page.data.chainId,
+          day,
+          offset: $offsetDays,
+        })
+        goto(url, {
           keepFocus: true,
           replaceState: true,
           noScroll: true,
           invalidateAll: true,
         })
-      }}>Reset</Button>
-  </a>
-  <DateInput
-    bind:value={offsetDate}
-    on:select={() => {
-      const offset = (+offsetDate - +$startDate) / filtersStore.DAY
-      filtersStore.offsetDays.set(offset)
-      const day = dateToDay($startDate)
-      goto(`/${$page.data.chainId}/${day}/${offset}`, {
-        keepFocus: true,
-        replaceState: true,
-        noScroll: true,
-        invalidateAll: true,
-      })
-    }}
-    max={new Date(Math.min(+filtersStore.maxDate, +$startDate + (filtersStore.maxOffsetDays * filtersStore.DAY)))}
-    min={$startDate}
-    format="yyyy-MM-dd"
-    class="flex rounded"
-    browseWithoutSelecting
-    closeOnSelection />
-  <Button
-    disabled={$address === ethers.constants.AddressZero || !!$owners.find((owner) => owner.hash === $address)}
-    on:click={() => filtersStore.addAddressToOwnerRaw($address, true)}>Show Own</Button>
+      }}
+      max={maxDate}
+      min={launchDate}
+      format="yyyy-MM-dd"
+      class="flex rounded"
+      browseWithoutSelecting
+      closeOnSelection />
+    <a href="{endUrl({
+      chainId: $page.data.chainId,
+      day: dateToDay(today()),
+      offset: $page.data.count,
+    })}">
+      <Button
+        size="md"
+        disabled={+($startDate) === +today() && +($untilDate) === +today()}
+        on:click={() => {
+          filtersStore.startDate.set(today())
+          filtersStore.offsetDays.set(filtersStore.defaultOffsetDays)
+          const url = endUrl({
+            chainId: $page.data.chainId,
+            day: dateToDay(today()),
+            offset: filtersStore.defaultOffsetDays,
+          })
+          goto(url, {
+            keepFocus: true,
+            replaceState: true,
+            noScroll: true,
+            invalidateAll: true,
+          })
+        }}>Reset</Button>
+    </a>
+    <DateInput
+      bind:value={offsetDate}
+      on:select={() => {
+        const offset = (+offsetDate - +$startDate) / filtersStore.DAY
+        filtersStore.offsetDays.set(offset)
+        const day = dateToDay($startDate)
+        const url = endUrl({
+          chainId: $page.data.chainId,
+          day,
+          offset,
+        })
+        goto(url, {
+          keepFocus: true,
+          replaceState: true,
+          noScroll: true,
+          invalidateAll: true,
+        })
+      }}
+      max={new Date(Math.min(+filtersStore.maxDate, +$startDate + (filtersStore.maxOffsetDays * filtersStore.DAY)))}
+      min={$startDate}
+      format="yyyy-MM-dd"
+      class="flex rounded"
+      browseWithoutSelecting
+      closeOnSelection />
+    <Button
+      disabled={$address === ethers.constants.AddressZero || !!$owners.find((owner) => owner.hash === $address)}
+      on:click={() => filtersStore.addAddressToOwnerRaw($address, true)}>Show Own</Button>
+  </div>
 </div>
 <div class="grid grid-cols-2 gap-4 my-2">
   <div class="grid-child">
