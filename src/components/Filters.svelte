@@ -15,6 +15,7 @@
 	import { elipsisAddress } from '../stores/addresses';
 	import { goto } from '$app/navigation';
 	import * as web3Store from '../stores/web3';
+	import * as dayStore from '../stores/day';
 	import { ethers } from 'ethers';
   $: address = web3Store.address
   $: endable = filtersStore.endable
@@ -26,21 +27,25 @@
   $: stakeIds = filtersStore.stakeIds
   $: isStakeIdValid = filtersStore.isStakeIdValid
 
-  $: startDate = filtersStore.startDate
-  $: untilDate = filtersStore.untilDate
-  $: offsetDays = filtersStore.offsetDays
-  $: offsetDate = new Date(+$startDate + ($offsetDays * filtersStore.DAY))
+  $: startDate = dayStore.startDate
+  $: untilDate = dayStore.untilDate
+  $: offsetDays = dayStore.offsetDays
+  $: offsetDate = new Date(+$startDate + ($offsetDays * dayStore.DAY))
   const {
     today,
-    endableChanged,
-    onlyOptimizableChanged,
     dateToDay,
     launchDate,
     maxDate,
+    DAY,
+    defaultOffsetDays,
+    maxOffsetDays,
+  } = dayStore
+  const {
+    endableChanged,
+    onlyOptimizableChanged,
   } = filtersStore
   const logEndableChanged = (evt: Event) => endableChanged((evt.target as any).checked)
   const logOptimizableChanged = (evt: Event) => onlyOptimizableChanged((evt.target as any).checked)
-  $: baseUrl = `/${$page.data.chainId}/end/${dateToDay(today())}`
   type Params = {
     chainId: number;
     day: number;
@@ -88,12 +93,12 @@
         size="md"
         disabled={+($startDate) === +today() && +($untilDate) === +today()}
         on:click={() => {
-          filtersStore.startDate.set(today())
-          filtersStore.offsetDays.set(filtersStore.defaultOffsetDays)
+          startDate.set(today())
+          offsetDays.set(defaultOffsetDays)
           const url = endUrl({
             chainId: $page.data.chainId,
             day: dateToDay(today()),
-            offset: filtersStore.defaultOffsetDays,
+            offset: defaultOffsetDays,
           })
           goto(url, {
             keepFocus: true,
@@ -106,8 +111,8 @@
     <DateInput
       bind:value={offsetDate}
       on:select={() => {
-        const offset = (+offsetDate - +$startDate) / filtersStore.DAY
-        filtersStore.offsetDays.set(offset)
+        const offset = (+offsetDate - +$startDate) / DAY
+        offsetDays.set(offset)
         const day = dateToDay($startDate)
         const url = endUrl({
           chainId: $page.data.chainId,
@@ -121,7 +126,7 @@
           invalidateAll: true,
         })
       }}
-      max={new Date(Math.min(+filtersStore.maxDate, +$startDate + (filtersStore.maxOffsetDays * filtersStore.DAY)))}
+      max={new Date(Math.min(+maxDate, +$startDate + (maxOffsetDays * DAY)))}
       min={$startDate}
       format="yyyy-MM-dd"
       class="flex rounded"

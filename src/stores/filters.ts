@@ -1,4 +1,4 @@
-import { derived, get, writable } from "svelte/store";
+import { get, writable } from "svelte/store";
 import { provider } from "./web3";
 import { ethers } from "ethers";
 import _ from "lodash";
@@ -97,35 +97,4 @@ export const removeStakeId = (stakeId: number) => {
   stakeIds.update((list) => (
     list.filter((item) => item !== stakeId)
   ))
-}
-
-export const launchDate = new Date('2019-12-03')
-export const MIN = 1000*60
-export const DAY = MIN*60*24
-export const today = () => {
-  return truncatedDay(new Date())
-}
-export const truncatedDay = (target: Date) => {
-  let t = +target
-  t -= t % DAY
-  return new Date(t)
-}
-export const timezoneOffset = (new Date()).getTimezoneOffset() * MIN
-export const maxOffsetDays = 30
-export const defaultOffsetDays = 2
-export const offsetDays = writable<number>(defaultOffsetDays)
-export const startDate = writable<Date>(today())
-export const untilDate = derived([offsetDays, startDate], ([$offsetDays, $startDate]) => {
-  return new Date(+$startDate + (DAY * $offsetDays))
-})
-export const currentDay = writable<number | null>(null)
-export const maxDate = new Date(+today() + (DAY * 5_555))
-export const dateToDay = (d: Date) => {
-  return Math.floor((+d - +launchDate) / DAY)
-}
-export const dayToDate = (day: number) => {
-  return new Date(+launchDate + (day * DAY))
-}
-export const dateAsString = (target: Date) => {
-  return target.toISOString().split('T')[0]
 }

@@ -8,8 +8,11 @@
     Icon,
   } from 'flowbite-svelte-icons'
 	import { goto } from "$app/navigation";
-	import { defaultOffsetDays } from "../stores/filters";
-  import { currentDay, getCurrentDay } from '../stores/day'
+  import {
+    defaultOffsetDays,
+    currentDay,
+    getCurrentDay,
+  } from '../stores/day'
 	import { onMount } from 'svelte';
 
   onMount(async () => {
@@ -19,7 +22,7 @@
     getCurrentDay()
   })
 
-  $: chainId = web3Store.chainId
+  const chainId = web3Store.chainId
 
   const navTo = (type: string) => {
     const url = type === 'end' ? `/${$chainId}/end/${$currentDay}/${defaultOffsetDays}`

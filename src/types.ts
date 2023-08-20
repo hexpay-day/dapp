@@ -77,3 +77,8 @@ export type StakeInfo = {
   stakedDays: number;
   lockedDay: number;
 }
+
+export type DropdownOption = {
+  value: number;
+  text: string;
+}

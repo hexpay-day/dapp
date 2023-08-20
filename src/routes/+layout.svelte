@@ -4,7 +4,7 @@
   import SpeedNav from '../components/SpeedNav.svelte'
   import { page } from '$app/stores';
   import * as web3Store from '../stores/web3'
-  import type { Chain } from '@wagmi/core'
+  import ToggleTimezone from '../components/ToggleTimezone.svelte'
   import {
     DarkMode,
     Dropdown,
@@ -30,7 +30,8 @@
     <DarkMode />
     <NavigatingIndicator />
   </div>
-  <div class="gap-2 my-1">
+  <div class="gap-2 my-1 flex">
+    <ToggleTimezone />
     <ConnectWallet />
     <Button>{chain?.name || 'Unknown'}<Icon name="chevron-down-solid" class="w-3 h-3 ml-2 text-white dark:text-white" /></Button>
     <Dropdown>
