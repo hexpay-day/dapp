@@ -174,7 +174,7 @@
             <DateInput
               bind:value={dateInputValue}
               format={`yyyy-MM-dd HH:mm ${$timezoneLabel}`}
-              class="flex flex-grow h-11 ml-[-1px] stake-start-cal-container second-class text-center"
+              class="flex flex-grow h-[2.625rem] ml-[-1px] stake-start-cal-container second-class text-center"
               browseWithoutSelecting
               closeOnSelection
               min={$useISO ? minDateLocal : minDateISO}
@@ -254,7 +254,7 @@
   <div class="grid grid-cols-2 col-span-2 gap-4">
     <div class="flex flex-col col-span-1">
       <Label>&nbsp;</Label>
-      <Button>Abilities</Button>
+      <Button class="h-[42px]">Abilities</Button>
       <Dropdown class="w-80" placement="bottom-start">
         <Label class="p-2">
           <Toggle bind:checked={othersCanEnd}>Others Can End</Toggle>
@@ -346,7 +346,7 @@
     {/each}
   </div>
   <div class="flex flex-col col-span-2">
-    <div class="flex justify-end"><Button>Add to Sequence<Icon class="ml-2" name="cart-plus-alt-outline" /></Button></div>
+    <div class="flex justify-end"><Button class="h-[42px]">Add to Sequence<Icon class="ml-2" name="cart-plus-alt-outline" /></Button></div>
   </div>
   {/if}
 </div>
