@@ -10,6 +10,8 @@
 	import { goto } from "$app/navigation";
   import {
     defaultOffsetDays,
+  } from '../stores/filtered-stakes'
+  import {
     currentDay,
     getCurrentDay,
   } from '../stores/day'
@@ -33,7 +35,7 @@
   }
 </script>
 
-<SpeedDial defaultClass="fixed right-4 bottom-14 z-10">
+<SpeedDial defaultClass="fixed right-4 bottom-14 z-30">
   <SpeedDialButton on:click={() => navTo('start')} name="Start">
     <Icon name="wand-magic-sparkles-outline" />
   </SpeedDialButton>

@@ -5,6 +5,7 @@
   } from 'flowbite-svelte'
 	import { writable } from 'svelte/store';
 	import { createEventDispatcher } from 'svelte';
+	import type { InputType } from 'flowbite-svelte/dist/types';
 
   export let decimals = 8
   export let defaultText = ''
@@ -13,8 +14,12 @@
   export let id = ''
   export let infiniteOver = ethers.constants.MaxUint256.toBigInt()
   export let validate = (_p: bigint) => true
-  export let inputClass = ""
+  let inputClass = ""
+  export { inputClass as class }
   export let uint = true
+  export let type: InputType = 'text'
+  export let disabled = false
+  export let maxUint = ethers.constants.MaxUint256.toBigInt()
   const value = writable<null | bigint>(null)
 	const dispatch = createEventDispatcher();
   value.subscribe(() => {
@@ -55,6 +60,10 @@
         text = infinityCharacter
         return true
       }
+      if (parsed > maxUint) {
+        value.set(null)
+        return false
+      }
       if (!validate(parsed)) {
         value.set(null)
         return false
@@ -76,6 +85,14 @@
   bind:value={text}
   on:keyup={keyupHandler}
   {id}
-  class={inputClass}
+  {disabled}
+  {type}
+  class={`${inputClass} decimal-input`}
   {placeholder}
   color={amountIsValid ? 'green' : amountIsValid === false ? 'red' : 'base'} />
+
+<style lang="postcss">
+  :global(.decimal-input) {
+    @apply border-l-[1px];
+  }
+</style>

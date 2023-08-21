@@ -25,13 +25,20 @@
   $: chain = chains.get($page.data.chainId)
 </script>
 
-<div class="container m-auto flex justify-between px-2">
-  <div class="m-1">
-    <DarkMode />
+<div class="container m-auto flex justify-between max-w-5xl h-14 items-center">
+  <div class="flex items-center">
+    <DarkMode class="text-lg bg-gray-200 dark:bg-gray-600 h-[42px] w-[44px] items-center mr-2">
+      <svelte:fragment slot="lightIcon">
+        <Icon class="m-auto" name="sun-solid" />
+      </svelte:fragment>
+      <svelte:fragment slot="darkIcon">
+        <Icon class="m-auto" name="moon-solid" />
+      </svelte:fragment>
+    </DarkMode>
+    <ToggleTimezone />
     <NavigatingIndicator />
   </div>
   <div class="gap-2 my-1 flex">
-    <ToggleTimezone />
     <ConnectWallet />
     <Button>{chain?.name || 'Unknown'}<Icon name="chevron-down-solid" class="w-3 h-3 ml-2 text-white dark:text-white" /></Button>
     <Dropdown>

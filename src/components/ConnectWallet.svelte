@@ -19,7 +19,7 @@
 </script>
 
 {#if trulyConnected}
-<Button on:click={disconnect}>Disconnect {elipsisAddress($address)}</Button>
+<Button class="h-[42px]" on:click={disconnect}>Disconnect {elipsisAddress($address)}</Button>
 {:else}
-<Button on:click={connect}>Connect</Button>
+<Button class="h-[42px]" on:click={connect}>Connect</Button>
 {/if}

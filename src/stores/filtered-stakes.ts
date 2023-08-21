@@ -3,6 +3,7 @@ import * as filtersStore from './filters'
 import * as addressStore from './addresses'
 import _ from "lodash";
 import { ethers } from "ethers";
+import { today, DAY, launchDate } from './day'
 
 export type Stake = {
   owner: string;
@@ -57,12 +58,19 @@ export const addStakeToTimeline = (type: TimelineTypes, stake: Stake) => {
   ))
 }
 
+export const maxOffsetDays = 30
+export const defaultOffsetDays = 2
+export const offsetDays = writable<number>(defaultOffsetDays)
+export const startDate = writable<Date>(today())
+export const untilDate = derived([offsetDays, startDate], ([$offsetDays, $startDate]) => {
+  return new Date(+$startDate + (DAY * $offsetDays))
+})
 export const filtered = derived([
   all,
   filtersStore.optimizable,
   filtersStore.endable,
-  filtersStore.startDate,
-  filtersStore.untilDate,
+  startDate,
+  untilDate,
   filtersStore.owners,
   filtersStore.stakeIds,
 ], ([$stakes, $optimizable, $endable, $startDate, $untilDate, $owners, $stakeIds]) => {
@@ -81,7 +89,7 @@ export const filtered = derived([
       }
     }
     // start and until date always exists
-    const endDay = new Date(+filtersStore.launchDate + (stake.endDay * filtersStore.DAY))
+    const endDay = new Date(+launchDate + (stake.endDay * DAY))
     if ($startDate > endDay || $untilDate < endDay) {
       return false
     }

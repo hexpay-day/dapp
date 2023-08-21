@@ -5,29 +5,32 @@
     DropdownItem,
   } from 'flowbite-svelte'
   import { Icon } from 'flowbite-svelte-icons';
+	import type { DropdownOption } from '../types';
+	import { createEventDispatcher } from 'svelte';
   let dropdownOpen = false
-  type Option = {
-    value: number;
-    text: string;
-  }
-  export let options: Option[] = []
+  export let options: DropdownOption[] = []
   export let value = options[0].value
+  let className = ''
+  export { className as class }
+  export let disabled = false
+  const dispatch = createEventDispatcher();
 </script>
 
-<div class="flex flex-col relative">
-  <Button class="border-[1px]"><Icon name="adjustments-horizontal-outline" /></Button>
-  <Dropdown placement="bottom-start" bind:open={dropdownOpen}>
-    {#each options as opt}
-    <DropdownItem on:click={() => {
-      value = opt.value;
-      dropdownOpen = false;
-    }}>{opt.text}</DropdownItem>
-    {/each}
-  </Dropdown>
-</div>
+<Button {disabled} class={className}><Icon size="sm" name="adjustments-horizontal-outline" /></Button>
+<Dropdown placement="bottom-start" bind:open={dropdownOpen}>
+  {#each options as opt}
+  <DropdownItem on:click={() => {
+    value = opt.value;
+    dropdownOpen = false;
+    dispatch('change', {
+      value: opt,
+    })
+  }}>{opt.text}</DropdownItem>
+  {/each}
+</Dropdown>
 
 <style lang="postcss">
   :global([role=tooltip]) {
-    @apply z-10;
+    @apply z-20;
   }
 </style>

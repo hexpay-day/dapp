@@ -5,11 +5,12 @@
   import * as addressesStore from '../stores/addresses'
   import EndSettings from './EndSettings.svelte'
   import { icons } from 'flowbite-svelte-icons'
+	import { renderHedronIcon } from '../stores/image';
 
   $: filtered = filteredStakesStore.filtered
 
-  const renderHedronIcon = (v: filteredStakesStore.Stake) => {
-    return v.isHedron ? `<span class="w-6 inline-block"><img width="20" height="20" alt="a white dodecahedron on a blue background" src="/hedron.png" title="${v.custodian}" /></span>` : (
+  const renderIcon = (v: filteredStakesStore.Stake) => {
+    return v.isHedron ? renderHedronIcon(v.custodian) : (
       addressesStore.perpetuals.has(v.owner) ? `<span class="w-6 inline-block"><img width="20" height="20" alt="a gold letter m on a blue background with faded hexagons and a gold border" src="/maximus.png" title="${v.custodian}" /></span>` : '<span class="w-6 inline-block"></span>'
     )
   }
@@ -32,7 +33,7 @@
       title: 'Stake Id',
       value: (v) => v.stakeId.toString(),
       headerClass: 'text-left',
-      renderValue: (v) => `<span class="flex">${renderHedronIcon(v)}<pre class="flex">${v.stakeId}</pre></span>`,
+      renderValue: (v) => `<span class="flex">${renderIcon(v)}<pre class="flex">${v.stakeId}</pre></span>`,
       parseHTML: true,
     }, {
       key: 'endDay',

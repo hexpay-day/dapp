@@ -16,6 +16,7 @@
 	import { goto } from '$app/navigation';
 	import * as web3Store from '../stores/web3';
 	import * as dayStore from '../stores/day';
+	import * as filteredStakesStore from '../stores/filtered-stakes';
 	import { ethers } from 'ethers';
   $: address = web3Store.address
   $: endable = filtersStore.endable
@@ -27,18 +28,20 @@
   $: stakeIds = filtersStore.stakeIds
   $: isStakeIdValid = filtersStore.isStakeIdValid
 
-  $: startDate = dayStore.startDate
-  $: untilDate = dayStore.untilDate
-  $: offsetDays = dayStore.offsetDays
+  $: startDate = filteredStakesStore.startDate
+  $: untilDate = filteredStakesStore.untilDate
+  $: offsetDays = filteredStakesStore.offsetDays
   $: offsetDate = new Date(+$startDate + ($offsetDays * dayStore.DAY))
+  const {
+    defaultOffsetDays,
+    maxOffsetDays,
+  } = filteredStakesStore
   const {
     today,
     dateToDay,
     launchDate,
     maxDate,
     DAY,
-    defaultOffsetDays,
-    maxOffsetDays,
   } = dayStore
   const {
     endableChanged,

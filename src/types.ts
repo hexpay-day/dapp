@@ -81,4 +81,18 @@ export type StakeInfo = {
 export type DropdownOption = {
   value: number;
   text: string;
+  expandedText?: string;
+}
+
+export type MagnitudeSelection = {
+  method: bigint;
+  numerator: bigint;
+  denominator: bigint;
+}
+
+export type Tip = {
+  currency: string;
+  limit: bigint;
+  numerator: bigint;
+  denominator: bigint;
 }
