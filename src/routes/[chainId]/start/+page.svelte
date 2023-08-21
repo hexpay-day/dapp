@@ -262,15 +262,15 @@
         </Label>
         <Label class="p-2">
           <Toggle bind:checked={canMintHedronAtAnyTime}>Can Mint Hedron at any time</Toggle>
-          <Helper class="pl-14">Can mint $HEDRON for owner of stake. Custody determined by an option below.</Helper>
+          <Helper class="pl-14">Can mint $HEDRON for owner of stake. Custody determined by option below.</Helper>
         </Label>
         <Label class="p-2">
           <Toggle bind:checked={shouldMintHedronAtEnd}>Should Mint Hedron at End</Toggle>
           <Helper class="pl-14">Mint $HEDRON for owner of stake when stake is being ended.</Helper>
         </Label>
         <Label class="p-2">
-          <Toggle bind:checked={contractCustodyTokens}>Custody Tokens after End</Toggle>
-          <Helper class="pl-14">Contract should remain custodian of tokens until owner collects them.</Helper>
+          <Toggle bind:checked={contractCustodyTokens}>Custody Tokens</Toggle>
+          <Helper class="pl-14">Contract should retain custodian of tokens until owner collects them.</Helper>
         </Label>
         <Label class="p-2">
           <Toggle bind:checked={allowStakeToBeTransferred}>Allow Stake to be Transferred</Toggle>
