@@ -1,13 +1,22 @@
 <script lang="ts">
 	import { ethers } from "ethers";
   import DecimalInput from "./DecimalInput.svelte";
-	import { createEventDispatcher } from "svelte";
+	import { SvelteComponent, createEventDispatcher } from "svelte";
 	import _ from "lodash";
   export let numeratorDisabled = false
   export let max = ethers.constants.MaxUint256.toBigInt()
   export let min = 0n
   export let showDenominator = false
   export let maxUint = 256
+  export let nullIsZero = false
+  export let text = ''
+  export let placeholder = '0'
+  let numerator!: SvelteComponent
+  $: {
+    numerator?.$set({
+      text: text || '',
+    })
+  }
   export let id = _.uniqueId('divisible-input')
   $: maxUintBigInt = (2n ** BigInt(maxUint)) - 1n
   const dispatch = createEventDispatcher()
@@ -23,9 +32,11 @@
 </script>
 
 <DecimalInput
+  bind:this={numerator}
   disabled={numeratorDisabled}
-  placeholder={'0'}
+  {placeholder}
   zeroIsNull
+  {nullIsZero}
   uint
   maxUint={maxUintBigInt}
   {max}
@@ -33,11 +44,12 @@
   class="text-right"
   decimals={0}
   id={`${id}-numerator`}
+  defaultText={text}
   on:update={updateNumerator} />
 {#if showDenominator}
 <button class="button-inactive" disabled>&divide;</button>
 <DecimalInput
-  placeholder={'0'}
+  {placeholder}
   uint
   maxUint={maxUintBigInt}
   {max}

@@ -82,6 +82,8 @@ export type DropdownOption = {
   value: number;
   text: string;
   expandedText?: string;
+  inputText?: string;
+  placeholder?: string;
 }
 
 export type MagnitudeSelection = {

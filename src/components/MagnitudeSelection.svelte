@@ -12,8 +12,11 @@
   export let label: string | SvelteComponent = ''
   export let showDenominatorWhenOver = 0
   export let options: DropdownOption[] = []
+  export let nullIsZero = false
+  // export let min = 0n
   const dispatch = createEventDispatcher()
-  let option: DropdownOption = options[0]
+  $: option = options[0]
+  $: placeholder = option.placeholder || '0'
   let method = 0
 
   $: selection = {
@@ -45,6 +48,7 @@
     }
     selection[key] = value
   }
+  $: optionalOptions = options ? { text: option?.inputText } : {}
 </script>
 
 <Label class="flex" label="input-{id}">{@html label} <span class="ml-auto leading-5 font-normal font-mono text-xs">{option.text}</span></Label>
@@ -63,6 +67,9 @@
       <DivisibleInput
         {numeratorDisabled}
         {showDenominator}
+        {nullIsZero}
+        {placeholder}
+        {...optionalOptions}
         maxUint={maxUintInput}
         on:update={onUpdate} />
     </ButtonGroup>

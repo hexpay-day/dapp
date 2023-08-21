@@ -23,13 +23,14 @@
 	import MagnitudeSelection from "../../../components/MagnitudeSelection.svelte";
 	import * as dayStore from "../../../stores/day";
   import type { EncodableSettings } from '@hexpayday/stake-manager/artifacts/types/contracts/EncodableSettings'
-  import type { Tip, MagnitudeSelection as MagSelection } from "../../../types";
+  import type { Tip, MagnitudeSelection as MagSelection, DropdownOption } from "../../../types";
   import TipAdjuster from "../../../components/TipAdjuster.svelte";
   const {
     useISO,
     DAY,
     timezoneLabel,
     maxDate,
+    maxDays,
     truncatedDay,
     today,
     timezoneOffset,
@@ -80,10 +81,10 @@
     denominator: 0n,
   }
   let newStakeAmountSelection: MagSelection = { ...defaultSelection }
-  let newStakeDaysSelection: MagSelection = { ...defaultSelection }
+  let newStakeDaysSelection: MagSelection = { ...defaultSelection, method: 2n }
   let hexTipSelection: MagSelection = { ...defaultSelection }
   let hedronTipSelection: MagSelection = { ...defaultSelection }
-  $: disableRepeatStakeAmountDropdownDuring = newStakeDaysSelection.numerator > 0n || newStakeDaysSelection.method > 1n ? [] : [1,4,5,6]
+  $: disableRepeatStakeAmountDropdownDuring = shouldRepeatStake && (newStakeDaysSelection.numerator > 0n || newStakeDaysSelection.method > 1n) ? [] : [1,4,5,6]
   let othersCanEnd = true
   let canMintHedronAtAnyTime = true
   let shouldMintHedronAtEnd = true
@@ -122,6 +123,21 @@
     },
   })
   let showSettings = false
+  $: repeatStakeDaysOptions = [{
+    value: 2,
+    text: 'Repeat Previous',
+    inputText: `${lockedDays}`,
+    placeholder: '1',
+  }, {
+    value: 1,
+    text: 'Constant',
+    placeholder: '1',
+  }, {
+    value: 3,
+    text: 'Keep Schedule',
+    inputText: 'automated',
+  }]
+  let shouldRepeatStake = false
 </script>
 <div class="grid grid-cols-2 max-w-5xl m-auto gap-4">
   {#if !$connected}
@@ -153,13 +169,13 @@
           Start: {dateTimeAsString($useISO ? startDateISO : startDateLocal)} {$timezoneLabel}
         </Label>
         <ButtonGroup class="flex flex-shrink">
-          <Button color="primary" disabled={+lockedDays === 5_555} on:click={() => updateEndDateFromDay(5_555n)}>MAX</Button>
+          <Button color="primary" disabled={+lockedDays === maxDays} on:click={() => updateEndDateFromDay(BigInt(maxDays))}>MAX</Button>
           <DecimalInput
             uint
             text={lockedDays}
             on:update={handleDayUpdate}
             class="text-base md:w-[80px] flex leading-[1.25rem] text-center"
-            validate={(val) => val >= 1n && val <= 5_555n}
+            validate={(val) => val >= 1n && val <= BigInt(maxDays)}
             decimals={0} />
           <InputAddon>Day(s)</InputAddon>
         </ButtonGroup>
@@ -256,26 +272,29 @@
   </div>
   <div class="flex flex-col col-span-1">
     <!-- link repeat previous +  -->
-    <MagnitudeSelection
-      label="Repeat Stake Days"
-      on:change={(e) => { newStakeDaysSelection = e.detail.value }}
-      showDenominatorNever
-      disableInputDuring={[2, 3]}
-      maxUint={16}
-      options={[{
-        value: 1,
-        text: 'Constant',
-      }, {
-        value: 2,
-        text: 'Repeat Previous',
-      }, {
-        value: 3,
-        text: 'Keep Schedule',
-      }]} />
+    <div class="flex flex-row">
+      <div class="flex flex-col">
+        <Label for="repeat-toggle">Repeat</Label>
+        <div class="flex flex-grow">
+          <Toggle id="repeat-toggle" class="justify-center" bind:checked={shouldRepeatStake} />
+        </div>
+      </div>
+      <div class="flex flex-col flex-grow">
+        <MagnitudeSelection
+          label="Stake Days"
+          on:change={(e) => { newStakeDaysSelection = e.detail.value }}
+          showDenominatorNever
+          nullIsZero
+          disableInputDuring={shouldRepeatStake ? [2, 3] : [1, 2, 3]}
+          disabledDropdownDuring={shouldRepeatStake ? [] : [1, 2, 3]}
+          maxUint={16}
+          options={repeatStakeDaysOptions} />
+      </div>
+    </div>
   </div>
   <div class="flex flex-col col-span-1">
     <MagnitudeSelection
-      label="Repeat Stake Amount"
+      label="Stake Amount"
       on:change={(e) => { newStakeAmountSelection = e.detail.value }}
       showDenominatorWhenOver={3}
       maxUint={64}

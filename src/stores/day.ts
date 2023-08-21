@@ -35,9 +35,10 @@ export const truncatedDay = (target: Date) => {
   t -= t % DAY
   return new Date(t)
 }
+export const maxDays = 5_555
 export const timezoneOffset = (d = new Date()) => d.getTimezoneOffset() * MIN
 export const currentDay = writable<number | null>(null)
-export const maxDate = new Date(+today() + DAY + (DAY * 5_555))
+export const maxDate = new Date(+today() + DAY + (DAY * maxDays))
 export const dateToDay = (d: Date) => {
   return Math.floor((+d - +launchDate) / DAY)
 }
