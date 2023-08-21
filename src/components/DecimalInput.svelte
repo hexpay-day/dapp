@@ -11,6 +11,7 @@
   export let defaultText = ''
   export let placeholder = ''
   export let zeroIsNull = false
+  export let nullIsZero = false
   export let id = ''
   export let infiniteOver = ethers.constants.MaxUint256.toBigInt()
   export let validate = (_p: bigint) => true
@@ -20,7 +21,7 @@
   export let type: InputType = 'text'
   export let disabled = false
   export let maxUint = ethers.constants.MaxUint256.toBigInt()
-  const value = writable<null | bigint>(null)
+  export const value = writable<null | bigint>(null)
 	const dispatch = createEventDispatcher();
   value.subscribe(() => {
     dispatch('update', {
@@ -42,10 +43,11 @@
       amnt = amnt.slice(0, amnt.length - 1)
     }
     try {
-      if (!amnt) {
+      if (!amnt && !nullIsZero) {
         value.set(null)
         return null
       }
+      amnt = amnt === '' && nullIsZero ? '0' : amnt
       const parsed = ethers.utils.parseUnits(amnt, decimals).toBigInt()
       if (parsed === 0n && zeroIsNull) {
         value.set(parsed)

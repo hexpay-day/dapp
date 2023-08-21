@@ -8,12 +8,17 @@
 	import { currencyMetadata } from '../stores/tip';
 	import { ethers } from 'ethers';
 	import { Icon } from 'flowbite-svelte-icons';
+	import { createEventDispatcher } from 'svelte';
+	import { get } from 'svelte/store';
+  const dispatch = createEventDispatcher()
   const defaultTip = {
     currency: ethers.constants.AddressZero,
     limit: 0n,
     numerator: 0n,
     denominator: 0n,
   }
+  let numerator!: DecimalInput
+  let denominator!: DecimalInput
 	const defaultMetadata = {
     decimals: 18,
     name: 'Ether',
@@ -21,7 +26,7 @@
   }
   export let empty = false
   export let tip: Tip = defaultTip;
-  let updatedTip = { ...tip }
+  $: updatedTip = { ...tip }
   let checked = false
 </script>
 {#await empty ? Promise.resolve(defaultMetadata) : currencyMetadata(tip?.currency)}
@@ -41,10 +46,19 @@
   </ButtonGroup>
 </div>
 <div class="flex flex-grow justify-end">
-  <Toggle bind:checked />
+  <Toggle bind:checked on:change={() => {
+    if (!checked) {
+      updatedTip.numerator = 0n
+      updatedTip.denominator = 0n
+    } else {
+      updatedTip.numerator = get(numerator.value) || 0n
+      updatedTip.denominator = get(denominator.value) || 0n
+    }
+  }} />
 </div>
 <ButtonGroup>
   <DecimalInput
+    bind:this={numerator}
     decimals={0}
     on:update={(e) => { updatedTip.numerator = e.detail.value }}
     uint
@@ -56,17 +70,23 @@
     disabled
     class="button-inactive">&times;&nbsp;basefee&nbsp;&divide;</button>
   <DecimalInput
+    bind:this={denominator}
     decimals={0}
     on:update={(e) => { updatedTip.denominator = e.detail.value }}
     uint
     disabled={!checked}
+    nullIsZero
     maxUint={(2n**64n)-1n}
     placeholder="0" />
   {#if empty}
   <Button
     color="primary"
+    disabled={updatedTip.limit === 0n || (checked && updatedTip.denominator === 0n)}
     on:click={() => {
-      console.log(tip)
+      console.log(updatedTip)
+      dispatch('create', {
+        value: updatedTip,
+      })
     }} >Add&nbsp;Tip<Icon class="ml-2" name="grid-plus-outline" /></Button>
   {/if}
 </ButtonGroup>

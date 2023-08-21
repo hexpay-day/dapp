@@ -84,7 +84,6 @@
   let hexTipSelection: MagSelection = { ...defaultSelection }
   let hedronTipSelection: MagSelection = { ...defaultSelection }
   $: disableRepeatStakeAmountDropdownDuring = newStakeDaysSelection.numerator > 0n || newStakeDaysSelection.method > 1n ? [] : [1,4,5,6]
-  $: console.log(newStakeDaysSelection)
   let othersCanEnd = true
   let canMintHedronAtAnyTime = true
   let shouldMintHedronAtEnd = true
