@@ -121,6 +121,7 @@
       hasExternalTips: false,
     },
   })
+  let showSettings = false
 </script>
 <div class="grid grid-cols-2 max-w-5xl m-auto gap-4">
   {#if !$connected}
@@ -207,6 +208,53 @@
     {/if}
   </div>
   <div class="flex flex-col col-span-1">
+    <div class="grid grid-cols-2">
+      <div class="flex flex-col col-span-1 items-start">
+        <Button class="h-[42px] mt-5" on:click={() => {
+          showSettings = !showSettings
+        }}><span class="min-w-[6rem]">{showSettings ? 'Hide' : 'Show'} Settings</span><Icon class="ml-2" name="adjustments-vertical-outline" /></Button>
+      </div>
+      {#if showSettings}
+      <div class="flex flex-col col-span-1">
+        <Button class="h-[42px] mt-5">Abilities</Button>
+        <Dropdown class="w-80" placement="bottom-start">
+          <Label class="p-2">
+            <Toggle bind:checked={othersCanEnd}>Others Can End</Toggle>
+            <Helper class="pl-14">Anyone can end this stake after the full term is served.</Helper>
+          </Label>
+          <Label class="p-2">
+            <Toggle bind:checked={canMintHedronAtAnyTime}>Can Mint Hedron at any time</Toggle>
+            <Helper class="pl-14">Can mint $HEDRON for owner of stake. Custody determined by option below.</Helper>
+          </Label>
+          <Label class="p-2">
+            <Toggle bind:checked={shouldMintHedronAtEnd}>Should Mint Hedron at End</Toggle>
+            <Helper class="pl-14">Mint $HEDRON for owner of stake when stake is being ended.</Helper>
+          </Label>
+          <Label class="p-2">
+            <Toggle bind:checked={contractCustodyTokens}>Custody Tokens</Toggle>
+            <Helper class="pl-14">Contract should retain custodian of tokens until owner collects them.</Helper>
+          </Label>
+          <Label class="p-2">
+            <Toggle bind:checked={allowStakeToBeTransferred}>Allow Stake to be Transferred</Toggle>
+            <Helper class="pl-14">Allow the owner of the stake to change. Can only be turned off after stake start.</Helper>
+          </Label>
+        </Dropdown>
+      </div>
+      {/if}
+    </div>
+  </div>
+  {#if showSettings}
+  <div class="flex flex-col col-span-1">
+    <Label for="restart-count-{id}">Copy Settings on Restart</Label>
+    <DecimalInput
+      decimals={0}
+      id="restart-count-{id}"
+      uint
+      defaultText='255'
+      infiniteOver={254n}
+      placeholder="0" />
+  </div>
+  <div class="flex flex-col col-span-1">
     <!-- link repeat previous +  -->
     <MagnitudeSelection
       label="Repeat Stake Days"
@@ -252,42 +300,6 @@
     </MagnitudeSelection>
   </div>
   <div class="grid grid-cols-2 col-span-2 gap-4">
-    <div class="flex flex-col col-span-1">
-      <Label>&nbsp;</Label>
-      <Button class="h-[42px]">Abilities</Button>
-      <Dropdown class="w-80" placement="bottom-start">
-        <Label class="p-2">
-          <Toggle bind:checked={othersCanEnd}>Others Can End</Toggle>
-          <Helper class="pl-14">Anyone can end this stake after the full term is served.</Helper>
-        </Label>
-        <Label class="p-2">
-          <Toggle bind:checked={canMintHedronAtAnyTime}>Can Mint Hedron at any time</Toggle>
-          <Helper class="pl-14">Can mint $HEDRON for owner of stake. Custody determined by option below.</Helper>
-        </Label>
-        <Label class="p-2">
-          <Toggle bind:checked={shouldMintHedronAtEnd}>Should Mint Hedron at End</Toggle>
-          <Helper class="pl-14">Mint $HEDRON for owner of stake when stake is being ended.</Helper>
-        </Label>
-        <Label class="p-2">
-          <Toggle bind:checked={contractCustodyTokens}>Custody Tokens</Toggle>
-          <Helper class="pl-14">Contract should retain custodian of tokens until owner collects them.</Helper>
-        </Label>
-        <Label class="p-2">
-          <Toggle bind:checked={allowStakeToBeTransferred}>Allow Stake to be Transferred</Toggle>
-          <Helper class="pl-14">Allow the owner of the stake to change. Can only be turned off after stake start.</Helper>
-        </Label>
-      </Dropdown>
-    </div>
-    <div class="flex flex-col col-span-1">
-      <Label for="restart-count-{id}">Copy Settings on Restart</Label>
-      <DecimalInput
-        decimals={0}
-        id="restart-count-{id}"
-        uint
-        defaultText='255'
-        infiniteOver={254n}
-        placeholder="0" />
-    </div>
     <div class="flex flex-col col-span-1">
       <MagnitudeSelection
         label="$HEX Tip"
@@ -345,15 +357,13 @@
     </div>
     {/each}
   </div>
-  <div class="flex flex-col col-span-2">
-    <div class="flex justify-end"><Button class="h-[42px]">Add to Sequence<Icon class="ml-2" name="cart-plus-alt-outline" /></Button></div>
+  {/if}
+  <div class="flex flex-col col-span-{showSettings ? '2' : '1'} items-end">
+    <Button class="h-[42px] mt-5">Add to Sequence<Icon class="ml-2" name="cart-plus-alt-outline" /></Button>
   </div>
   {/if}
 </div>
 <style lang="postcss">
-  /* :global(.stake-start-cal-select > div) {
-    flex-grow: 1;
-  } */
   :global(.stake-start-cal-container.second-class input) {
     --date-input-width: 100%;
     border-radius: 0;
