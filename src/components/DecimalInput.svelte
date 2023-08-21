@@ -12,6 +12,8 @@
   export let placeholder = ''
   export let zeroIsNull = false
   export let nullIsZero = false
+  export let max = ethers.constants.MaxUint256.toBigInt()
+  export let min = ethers.constants.MinInt256.toBigInt()
   export let id = ''
   export let infiniteOver = ethers.constants.MaxUint256.toBigInt()
   export let validate = (_p: bigint) => true
@@ -63,6 +65,10 @@
         return true
       }
       if (parsed > maxUint) {
+        value.set(null)
+        return false
+      }
+      if (parsed > max || parsed < min) {
         value.set(null)
         return false
       }

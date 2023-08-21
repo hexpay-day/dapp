@@ -4,6 +4,7 @@
   import {
     chainId,
     connected,
+    connectable,
     address,
     facilitateConnect,
     facilitateDisconnect,
@@ -21,5 +22,5 @@
 {#if trulyConnected}
 <Button class="h-[42px]" on:click={disconnect}>Disconnect {elipsisAddress($address)}</Button>
 {:else}
-<Button class="h-[42px]" on:click={connect}>Connect</Button>
+<Button class="h-[42px]" disabled={!$connectable} on:click={connect}>Connect</Button>
 {/if}

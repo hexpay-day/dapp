@@ -4,11 +4,18 @@ import type { SwitchChainError } from 'viem'
 import { mainnet, pulsechain, pulsechainV4 } from '@wagmi/chains'
 import type { Chain } from '@wagmi/core'
 
+export const connectable = writable(false)
 export const connected = writable(false)
 export const chainId = writable<number>(0)
 export const address = writable<string>(ethers.constants.AddressZero)
 export const signer = writable<ethers.providers.JsonRpcSigner | null>(null)
 export const currentBlock = writable<ethers.providers.Block | null>(null)
+
+const id = setInterval(() => {
+  if (typeof window === 'undefined') return
+  connectable.set(!!window.ethereum)
+  clearInterval(id)
+}, 1_000)
 
 export const setChainIdIfNot = (cId: number) => {
   if (get(chainId) || !chains.has(cId)) {
@@ -29,6 +36,9 @@ export const rpcs = new Map<number, string>([
 ])
 
 export const provider = () => {
+  if (!get(connectable)) {
+    return
+  }
   return new ethers.providers.Web3Provider(window.ethereum)
 }
 
@@ -38,6 +48,7 @@ export const secondsToIso = (timestamp = 0) => {
 
 export const changeNetworks = async (requestedChainId: number) => {
   const p = provider()
+  if (!p) return
   const target = chains.get(requestedChainId) as Chain
   const chainId = `0x${requestedChainId.toString(16)}`
   try {
@@ -95,6 +106,7 @@ const fetchNetworkInfo = startPolling(updateNetworkInfo)
 
 export const facilitateConnect = async () => {
   const p = provider()
+  if (!p) return
   await p.send("eth_requestAccounts", [])
   const s = p.getSigner()
   const addr = await s.getAddress()
