@@ -124,23 +124,6 @@
   {#if !$connected}
     connect wallet before proceeding
   {:else}
-  <div class="flex flex-col">
-    <Label for="funder-input" class="text-gray-900 dark:text-gray-300">{$fundOther ? 'Funder' : 'Owner'}</Label>
-    <div class="flex flex-row space-x-2">
-      <Input id="funder-input" class="text-base leading-[1.25rem]" bind:value={$address} disabled />
-    </div>
-  </div>
-  <div class="flex flex-col" title="Gift a new stake to another account, a cold wallet, etc.">
-    <Label for="owner-input">{@html $fundOther ? 'Owner' : '&nbsp;'}</Label>
-    <Label for="owner-input" defaultClass="flex flex-row">
-      <Toggle bind:checked={$fundOther} />
-      {#if !$fundOther}
-      <Button size="md" class="h-[42px]" on:click={() => { fundOther.set(true) } }><Icon name="gift-box-outline" /></Button>
-      {:else}
-      <Input id="owner-input" class="text-base leading-[1.25rem]" bind:value={$account} color={$validAccount ? 'green' : 'red'} />
-      {/if}
-    </Label>
-  </div>
   <div class="flex flex-col flex-grow">
     <div class="flex flex-row space-x-4 flex-grow">
       <div class="flex flex-col flex-shrink">
@@ -253,6 +236,23 @@
       on:update={(e) => { copyIterations.set(e.detail.value) }}
       infiniteAt={255n}
       placeholder="0" />
+  </div>
+  <div class="flex flex-col col-span-1">
+    <Label for="funder-input" class="text-gray-900 dark:text-gray-300">{$fundOther ? 'Funder' : 'Owner'}</Label>
+    <div class="flex flex-row space-x-2">
+      <Input id="funder-input" class="text-base leading-[1.25rem]" bind:value={$address} disabled />
+    </div>
+  </div>
+  <div class="flex flex-col col-span-1" title="Gift a new stake to another account, a cold wallet, etc.">
+    <Label for="owner-input">{@html $fundOther ? 'Owner' : '&nbsp;'}</Label>
+    <Label for="owner-input" defaultClass="flex flex-row">
+      <Toggle bind:checked={$fundOther} />
+      {#if !$fundOther}
+      <Button size="md" class="h-[42px]" on:click={() => { fundOther.set(true) } }><Icon name="gift-box-outline" /></Button>
+      {:else}
+      <Input id="owner-input" class="text-base leading-[1.25rem]" bind:value={$account} color={$validAccount ? 'green' : 'red'} />
+      {/if}
+    </Label>
   </div>
   <div class="flex flex-col col-span-1">
     <!-- link repeat previous +  -->
