@@ -12,151 +12,132 @@
     Button,
     Dropdown,
   } from 'flowbite-svelte'
-  import dayjs from 'dayjs'
   import { Icon } from 'flowbite-svelte-icons'
 	import _ from "lodash";
 	import { DateInput } from 'date-picker-svelte'
-	import { derived, writable } from "svelte/store";
 	import DecimalInput from "../../../components/DecimalInput.svelte";
 	import HexIcon from "../../../components/icons/Hex.svelte";
 	import HedronIcon from "../../../components/icons/Hedron.svelte";
 	import MagnitudeSelection from "../../../components/MagnitudeSelection.svelte";
 	import * as dayStore from "../../../stores/day";
-  import type { EncodableSettings } from '@hexpayday/stake-manager/artifacts/types/contracts/EncodableSettings'
-  import type { Tip, MagnitudeSelection as MagSelection, DropdownOption } from "../../../types";
-  import TipAdjuster from "../../../components/TipAdjuster.svelte";
+	import * as stakeStartStore from "../../../stores/stake-start";
+	import { derived, get, writable } from "svelte/store";
+	import type { EncodableSettings } from "@hexpayday/stake-manager/artifacts/types";
+	import { TaskType, addToSequence } from "../../../stores/sequence";
   const {
     useISO,
-    DAY,
     timezoneLabel,
     maxDate,
     maxDays,
-    truncatedDay,
-    today,
+    startDateISO,
+    startDateLocal,
+    minDateISO,
+    minDateLocal,
     timezoneOffset,
     dateTimeAsString,
   } = dayStore
+  const {
+    amount,
+    fundOther,
+    validAccount,
+    account,
+    lockedDays,
+    dateInputValue,
+    endDateLocal,
+    amountIsValid,
+    showSettings,
+    othersCanEnd,
+    canMintHedronAtAnyTime,
+    shouldMintHedronAtEnd,
+    contractCustodyTokens,
+    allowStakeToBeTransferred,
+    newStakeDaysSelection,
+    repeatStakeDaysOptions,
+    newStakeAmountSelection,
+    hexTipSelection,
+    hedronTipSelection,
+    disableRepeatStakeAmountDropdownDuring,
+    repeatStakeAmountOptions,
+    tips,
+    updateEndDateFromDay,
+    handleDayUpdate,
+  } = stakeStartStore
   $: fetchData($chainId, $address)
-  $: account = address
-  const validateAddress = (acc: string) => {
-    return ethers.utils.isAddress(acc)
-  }
-  $: validAccount = derived([account], ([$account]) => {
-    return validateAddress($account)
-  })
-
-  const startDateISO = truncatedDay(new Date(+today() + DAY))
-  const startDateLocal = new Date(+startDateISO - timezoneOffset(startDateISO))
-  const amount = writable<string>('')
-  const minDateISO = new Date(+truncatedDay(today()) + (DAY * 2))
-  const minDateLocal = new Date(+minDateISO + timezoneOffset(minDateISO))
-  let endDateLocal = minDateISO
-  $: endDateISO = new Date(+endDateLocal + timezoneOffset(endDateLocal))
-  const yesterday = new Date(+new Date(dateTimeAsString(today())) + DAY)
-  $: lockedDays = `${dayjs(endDateISO).diff(yesterday, 'day')}`
-  $: dateInputValue = $useISO ? endDateISO : endDateLocal
-  const validAmount = (amount: string) => {
-    try {
-      if (!amount) {
-        return null
-      }
-      if (amount[amount.length - 1] === '.') {
-        return false
-      }
-      const parsed = ethers.utils.parseUnits(amount, 8).toBigInt()
-      if (parsed === 0n) {
-        return null
-      }
-      return true
-    } catch(err) {
-      return false
-    }
-  }
-  $: amountIsValid = derived([amount], ([$amount]) => {
-    return validAmount($amount)
-  })
-  const defaultSelection: MagSelection = {
-    method: 0n,
-    numerator: 0n,
-    denominator: 0n,
-  }
-  let newStakeAmountSelection: MagSelection = { ...defaultSelection }
-  let newStakeDaysSelection: MagSelection = { ...defaultSelection, method: 2n }
-  let hexTipSelection: MagSelection = { ...defaultSelection }
-  let hedronTipSelection: MagSelection = { ...defaultSelection }
-  $: disableRepeatStakeAmountDropdownDuring = shouldRepeatStake && (newStakeDaysSelection.numerator > 0n || newStakeDaysSelection.method > 1n) ? [] : [1,4,5,6]
-  let othersCanEnd = true
-  let canMintHedronAtAnyTime = true
-  let shouldMintHedronAtEnd = true
-  let contractCustodyTokens = true
-  let allowStakeToBeTransferred = false
-  let fundOther = false
   const id = _.uniqueId()
-  const handleDayUpdate = (e: unknown) => {
-    const days = (e as CustomEvent).detail.value as null | bigint
-    if (!days) return
-    updateEndDateFromDay(days)
-  }
-  const updateEndDateFromDay = (days: bigint) => {
-    endDateLocal = new Date(+minDateISO + (parseInt(days.toString(), 10) * DAY) - DAY)
-  }
-  let tips: Tip[] = []
-  const setting = writable<EncodableSettings.SettingsStruct>({
-    tipMethod: 0n,
-    tipMagnitude: 0n,
-    hedronTipMethod: 0n,
-    hedronTipMagnitude: 0n,
-    newStakeMethod: 0n,
-    newStakeMagnitude: 0n,
-    newStakeDaysMethod: 0n,
-    newStakeDaysMagnitude: 0n,
-    copyIterations: 0n,
-    consentAbilities: {
-      canStakeEnd: false,
-      canEarlyStakeEnd: false,
-      canMintHedron: false,
-      canMintHedronAtEnd: false,
-      shouldSendTokensToStaker: false,
-      stakeIsTransferrable: false,
-      copyExternalTips: false,
-      hasExternalTips: false,
-    },
+  const validatedAccount = derived([account], ([$account]) => {
+    return ethers.utils.isAddress($account) ? $account : null
   })
-  let showSettings = false
-  $: repeatStakeDaysOptions = [{
-    value: 2,
-    text: 'Repeat Previous',
-    inputText: `${lockedDays}`,
-    placeholder: '1',
-  }, {
-    value: 1,
-    text: 'Constant',
-    placeholder: '1',
-  }, {
-    value: 3,
-    text: 'Keep Schedule',
-    inputText: 'automated',
-  }]
-  let shouldRepeatStake = false
+  const copyIterations = writable(255)
+  $: settings = {
+    lockedDays: $lockedDays,
+    for: $validatedAccount,
+    amount: $amountIsValid ? $amount : null,
+    settings: {
+      tipMethod: $hexTipSelection.method,
+      tipMagnitude: '0x'+(
+        $hexTipSelection.method === 0n ? 0n
+        : (
+          $hexTipSelection.method === 1n
+            ? $hexTipSelection.numerator
+            : ($hexTipSelection.numerator << 32n) | $hexTipSelection.denominator
+        )
+      ).toString(16),
+      hedronTipMethod: $hedronTipSelection.method,
+      hedronTipMagnitude: '0x'+(
+        $hedronTipSelection.method === 0n ? 0n
+        : (
+          $hedronTipSelection.method === 1n
+            ? $hedronTipSelection.numerator
+            : ($hedronTipSelection.numerator << 32n) | $hedronTipSelection.denominator
+        )
+      ).toString(16),
+      newStakeDaysMethod: $newStakeDaysSelection.method,
+      newStakeDaysMagnitude: '0x'+($newStakeDaysSelection.method === 0n
+        ? 0n
+        : (
+          $newStakeDaysSelection.method === 2n ? 0n
+          : (
+            $newStakeDaysSelection.method === 1n && $newStakeDaysSelection.numerator === 0n
+              ? 1n
+              : $newStakeDaysSelection.numerator
+          )
+        )).toString(16),
+      newStakeMethod: $newStakeAmountSelection.method,
+      newStakeMagnitude: $newStakeAmountSelection.method === 0n ? '0x0' : '0x'+($newStakeAmountSelection.method === 1n
+        ? $newStakeAmountSelection.numerator
+        : $newStakeAmountSelection.numerator << 32n | $newStakeAmountSelection.denominator).toString(16),
+      copyIterations: $copyIterations,
+      consentAbilities: {
+        canStakeEnd: $othersCanEnd,
+        canEarlyStakeEnd: false, // don't allow a stake to be early ended at creation time
+        canMintHedron: $canMintHedronAtAnyTime,
+        canMintHedronAtEnd: $shouldMintHedronAtEnd,
+        shouldSendTokensToStaker: !$contractCustodyTokens,
+        stakeIsTransferrable: $allowStakeToBeTransferred,
+        copyExternalTips: false,
+        hasExternalTips: false,
+      } as EncodableSettings.ConsentAbilitiesStruct,
+    } as EncodableSettings.SettingsStruct,
+  }
 </script>
 <div class="grid grid-cols-2 max-w-5xl m-auto gap-4">
   {#if !$connected}
     connect wallet before proceeding
   {:else}
   <div class="flex flex-col">
-    <Label for="funder-input" class="text-gray-900 dark:text-gray-300">{fundOther ? 'Funder' : 'Owner'}</Label>
+    <Label for="funder-input" class="text-gray-900 dark:text-gray-300">{$fundOther ? 'Funder' : 'Owner'}</Label>
     <div class="flex flex-row space-x-2">
-      <Input id="funder-input" class="text-base leading-[1.25rem]" bind:value={$address} color={validAccount ? 'green' : 'red'} disabled />
+      <Input id="funder-input" class="text-base leading-[1.25rem]" bind:value={$address} disabled />
     </div>
   </div>
   <div class="flex flex-col" title="Gift a new stake to another account, a cold wallet, etc.">
-    <Label for="owner-input">{@html fundOther ? 'Owner' : '&nbsp;'}</Label>
+    <Label for="owner-input">{@html $fundOther ? 'Owner' : '&nbsp;'}</Label>
     <Label for="owner-input" defaultClass="flex flex-row">
-      <Toggle bind:checked={fundOther} />
-      {#if !fundOther}
-      <Button size="md" class="h-[42px]" on:click={() => { fundOther = true } }><Icon name="gift-box-outline" /></Button>
+      <Toggle bind:checked={$fundOther} />
+      {#if !$fundOther}
+      <Button size="md" class="h-[42px]" on:click={() => { fundOther.set(true) } }><Icon name="gift-box-outline" /></Button>
       {:else}
-      <Input id="owner-input" class="text-base leading-[1.25rem]" bind:value={$account} />
+      <Input id="owner-input" class="text-base leading-[1.25rem]" bind:value={$account} color={$validAccount ? 'green' : 'red'} />
       {/if}
     </Label>
   </div>
@@ -165,17 +146,19 @@
       <div class="flex flex-col flex-shrink">
         <Label
           for="days-input"
-          title="{$useISO ? startDateISO.toString() : startDateISO.toISOString()}">
-          Start: {dateTimeAsString($useISO ? startDateISO : startDateLocal)} {$timezoneLabel}
+          title="{$useISO ? $startDateISO.toString() : $startDateISO.toISOString()}">
+          Start: {dateTimeAsString($useISO ? $startDateISO : $startDateLocal)} {$timezoneLabel}
         </Label>
         <ButtonGroup class="flex flex-shrink">
-          <Button color="primary" disabled={+lockedDays === maxDays} on:click={() => updateEndDateFromDay(BigInt(maxDays))}>MAX</Button>
+          <Button color="primary" disabled={+$lockedDays === maxDays} on:click={() => updateEndDateFromDay(BigInt(maxDays))}>MAX</Button>
           <DecimalInput
             uint
-            text={lockedDays}
+            text={$lockedDays}
             on:update={handleDayUpdate}
+            nullIsZero
+            min={1n}
+            max={BigInt(maxDays)}
             class="text-base md:w-[80px] flex leading-[1.25rem] text-center"
-            validate={(val) => val >= 1n && val <= BigInt(maxDays)}
             decimals={0} />
           <InputAddon>Day(s)</InputAddon>
         </ButtonGroup>
@@ -189,18 +172,18 @@
           <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
           <div role="group" class="flex-grow" on:keypress={() => {}} on:click|preventDefault={(e) => {}}>
             <DateInput
-              bind:value={dateInputValue}
+              bind:value={$dateInputValue}
               format={`yyyy-MM-dd HH:mm ${$timezoneLabel}`}
               class="flex flex-grow h-[2.625rem] ml-[-1px] stake-start-cal-container second-class text-center"
               browseWithoutSelecting
               closeOnSelection
-              min={$useISO ? minDateLocal : minDateISO}
+              min={$useISO ? $minDateLocal : $minDateISO}
               max={maxDate}
               on:select={() => {
-                const timezoneOffsetDelta = timezoneOffset(endDateLocal) - timezoneOffset(dateInputValue)
-                endDateLocal = $useISO
-                  ? new Date(+dateInputValue + timezoneOffset(dateInputValue))
-                  : new Date(+dateInputValue + timezoneOffsetDelta)
+                const timezoneOffsetDelta = timezoneOffset($endDateLocal) - timezoneOffset($dateInputValue)
+                endDateLocal.set($useISO
+                  ? new Date(+$dateInputValue + timezoneOffset($dateInputValue))
+                  : new Date(+$dateInputValue + timezoneOffsetDelta))
               }} />
             </div>
         </Label>
@@ -227,31 +210,31 @@
     <div class="grid grid-cols-2">
       <div class="flex flex-col col-span-1 items-start">
         <Button class="h-[42px] mt-5" on:click={() => {
-          showSettings = !showSettings
-        }}><span class="min-w-[6rem]">{showSettings ? 'Hide' : 'Show'} Settings</span><Icon class="ml-2" name="adjustments-vertical-outline" /></Button>
+          showSettings.set(!$showSettings)
+        }}><span class="min-w-[6rem]">{$showSettings ? 'Hide' : 'Show'} Settings</span><Icon class="ml-2" name="adjustments-vertical-outline" /></Button>
       </div>
-      {#if showSettings}
+      {#if $showSettings}
       <div class="flex flex-col col-span-1">
         <Button class="h-[42px] mt-5">Abilities</Button>
         <Dropdown class="w-80" placement="bottom-start">
           <Label class="p-2">
-            <Toggle bind:checked={othersCanEnd}>Others Can End</Toggle>
+            <Toggle bind:checked={$othersCanEnd}>Others Can End</Toggle>
             <Helper class="pl-14">Anyone can end this stake after the full term is served.</Helper>
           </Label>
           <Label class="p-2">
-            <Toggle bind:checked={canMintHedronAtAnyTime}>Can Mint Hedron at any time</Toggle>
+            <Toggle bind:checked={$canMintHedronAtAnyTime}>Can Mint Hedron at any time</Toggle>
             <Helper class="pl-14">Can mint $HEDRON for owner of stake. Custody determined by option below.</Helper>
           </Label>
           <Label class="p-2">
-            <Toggle bind:checked={shouldMintHedronAtEnd}>Should Mint Hedron at End</Toggle>
-            <Helper class="pl-14">Mint $HEDRON for owner of stake when stake is being ended.</Helper>
+            <Toggle bind:checked={$shouldMintHedronAtEnd}>Should Mint Hedron at End</Toggle>
+            <Helper class="pl-14">Mint $HDRN for owner of stake when stake is being ended.</Helper>
           </Label>
           <Label class="p-2">
-            <Toggle bind:checked={contractCustodyTokens}>Custody Tokens</Toggle>
+            <Toggle bind:checked={$contractCustodyTokens}>Custody Tokens</Toggle>
             <Helper class="pl-14">Contract should retain custodian of tokens until owner collects them.</Helper>
           </Label>
           <Label class="p-2">
-            <Toggle bind:checked={allowStakeToBeTransferred}>Allow Stake to be Transferred</Toggle>
+            <Toggle bind:checked={$allowStakeToBeTransferred}>Allow Stake to be Transferred</Toggle>
             <Helper class="pl-14">Allow the owner of the stake to change. Can only be turned off after stake start.</Helper>
           </Label>
         </Dropdown>
@@ -259,60 +242,49 @@
       {/if}
     </div>
   </div>
-  {#if showSettings}
+  {#if $showSettings}
   <div class="flex flex-col col-span-1">
     <Label for="restart-count-{id}">Copy Settings on Restart</Label>
     <DecimalInput
       decimals={0}
       id="restart-count-{id}"
       uint
-      defaultText='255'
-      infiniteOver={254n}
+      defaultText={`${$copyIterations}`}
+      on:update={(e) => { copyIterations.set(e.detail.value) }}
+      infiniteAt={255n}
       placeholder="0" />
   </div>
   <div class="flex flex-col col-span-1">
     <!-- link repeat previous +  -->
     <div class="flex flex-row">
-      <div class="flex flex-col">
+      <!-- <div class="flex flex-col">
         <Label for="repeat-toggle">Repeat</Label>
         <div class="flex flex-grow">
-          <Toggle id="repeat-toggle" class="justify-center" bind:checked={shouldRepeatStake} />
+          <Toggle id="repeat-toggle" class="justify-center" bind:checked={$shouldRepeatStake} />
         </div>
-      </div>
+      </div> -->
       <div class="flex flex-col flex-grow">
         <MagnitudeSelection
-          label="Stake Days"
-          on:change={(e) => { newStakeDaysSelection = e.detail.value }}
+          label="Repeat Stake Days"
+          on:change={(e) => { newStakeDaysSelection.set(e.detail.value) }}
           showDenominatorNever
           nullIsZero
-          disableInputDuring={shouldRepeatStake ? [2, 3] : [1, 2, 3]}
-          disabledDropdownDuring={shouldRepeatStake ? [] : [1, 2, 3]}
+          disableInputDuring={[0, 2, 3]}
           maxUint={16}
-          options={repeatStakeDaysOptions} />
+          options={$repeatStakeDaysOptions} />
       </div>
     </div>
   </div>
   <div class="flex flex-col col-span-1">
     <MagnitudeSelection
-      label="Stake Amount"
-      on:change={(e) => { newStakeAmountSelection = e.detail.value }}
+      label="Repeat Stake Amount"
+      on:change={(e) => { newStakeAmountSelection.set(e.detail.value) }}
       showDenominatorWhenOver={3}
       maxUint={64}
-      disableInputDuring={disableRepeatStakeAmountDropdownDuring}
-      disabledDropdownDuring={disableRepeatStakeAmountDropdownDuring}
-      options={[{
-        value: 1,
-        text: 'Constant',
-      }, {
-        value: 4,
-        text: '% of Total',
-      }, {
-        value: 5,
-        text: '% of Principle',
-      }, {
-        value: 6,
-        text: '% of Yield',
-      }]}>
+      suffix="HEX"
+      disabledDropdownDuring={$disableRepeatStakeAmountDropdownDuring}
+      disableInputDuring={$disableRepeatStakeAmountDropdownDuring}
+      options={$repeatStakeAmountOptions}>
       <span class="flex flex-col items-center min-w-[28px]" slot="before">
         <HexIcon class="mt-2" size={28} />
       </span>
@@ -321,22 +293,32 @@
   <div class="grid grid-cols-2 col-span-2 gap-4">
     <div class="flex flex-col col-span-1">
       <MagnitudeSelection
-        label="$HEX Tip"
-        on:change={(e) => { hexTipSelection = e.detail.value }}
+        label="Tip"
+        on:change={(e) => { hexTipSelection.set(e.detail.value) }}
         showDenominatorWhenOver={3}
         maxUint={64}
+        suffix="HEX"
+        disableInputDuring={[0]}
         options={[{
+          value: 0,
+          text: 'Off',
+          inputText: 'off',
+        }, {
           value: 1,
           text: 'Constant',
+          inputText: '',
         }, {
           value: 4,
           text: '% of Total',
+          inputText: '',
         }, {
           value: 5,
           text: '% of Principle',
+          inputText: '',
         }, {
           value: 6,
           text: '% of Yield',
+          inputText: '',
         }]}>
         <span class="flex flex-col items-center min-w-[28px]" slot="before">
           <HexIcon class="mt-2" size={28} />
@@ -345,40 +327,44 @@
     </div>
     <div class="flex flex-col col-span-1">
       <MagnitudeSelection
-        label="$HEDRON Tip"
-        on:change={(e) => { hedronTipSelection = e.detail.value }}
+        label="Tip"
+        on:change={(e) => { hedronTipSelection.set(e.detail.value) }}
         showDenominatorWhenOver={3}
         maxUint={64}
+        suffix="HDRN"
+        disableInputDuring={[0]}
         options={[{
+          value: 0,
+          text: 'Off',
+          inputText: 'off',
+        }, {
           value: 1,
           text: 'Constant',
+          inputText: '',
         }, {
           value: 4,
           text: '% of Total',
+          inputText: '',
         }, {
           value: 5,
           text: '% of Principle',
+          inputText: '',
         }, {
           value: 6,
           text: '% of Yield',
+          inputText: '',
         }]}>
         <span class="flex flex-col items-center min-w-[28px]" slot="before">
           <HedronIcon size={28} class="mt-2" />
         </span>
       </MagnitudeSelection>
     </div>
-    <div class="flex flex-row col-span-2 justify-between">
-      <TipAdjuster empty />
-    </div>
-    {#each tips as tip}
-    <div class="flex flex-row col-span-2 justify-between">
-      <TipAdjuster {tip} />
-    </div>
-    {/each}
   </div>
   {/if}
-  <div class="flex flex-col col-span-{showSettings ? '2' : '1'} items-end">
-    <Button class="h-[42px] mt-5">Add to Sequence<Icon class="ml-2" name="cart-plus-alt-outline" /></Button>
+  <div class="flex flex-col col-span-{$showSettings ? '2' : '1'} items-end">
+    <Button class="h-[42px] mt-5" on:click={() => {
+      addToSequence(TaskType.start, settings)
+    }}>Add to Sequence<Icon class="ml-2" name="cart-plus-alt-outline" /></Button>
   </div>
   {/if}
 </div>

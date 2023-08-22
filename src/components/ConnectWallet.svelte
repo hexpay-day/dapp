@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { Icon } from 'flowbite-svelte-icons';
 	import { elipsisAddress } from '../stores/addresses';
   import {
     chainId,
@@ -9,7 +10,7 @@
     facilitateConnect,
     facilitateDisconnect,
   } from '../stores/web3'
-	import { Button } from 'flowbite-svelte';
+	import { Button, ButtonGroup } from 'flowbite-svelte';
   const connect = async () => {
     await facilitateConnect()
   }
@@ -20,7 +21,12 @@
 </script>
 
 {#if trulyConnected}
-<Button class="h-[42px]" on:click={disconnect}>Disconnect {elipsisAddress($address)}</Button>
+<ButtonGroup>
+  <Button class="h-[42px]">{elipsisAddress($address)}</Button>
+  <Button on:click={disconnect} color="primary">
+    <Icon size="sm" name="arrow-right-from-bracket-solid" />
+  </Button>
+</ButtonGroup>
 {:else}
 <Button class="h-[42px]" disabled={!$connectable} on:click={connect}>Connect</Button>
 {/if}

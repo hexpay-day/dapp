@@ -6,16 +6,19 @@
 	import { writable } from 'svelte/store';
 	import { createEventDispatcher } from 'svelte';
 	import type { InputType } from 'flowbite-svelte/dist/types';
+	import _ from 'lodash';
 
   export let decimals = 8
   export let defaultText = ''
   export let placeholder = ''
   export let zeroIsNull = false
   export let nullIsZero = false
-  export let max = ethers.constants.MaxUint256.toBigInt()
-  export let min = ethers.constants.MinInt256.toBigInt()
+  // const maxUint256 = ethers.constants.MaxUint256.toBigInt()
+  // const minInt256 = ethers.constants.MinInt256.toBigInt()
+  export let max: bigint | null = null
+  export let min: bigint | null = null
   export let id = ''
-  export let infiniteOver = ethers.constants.MaxUint256.toBigInt()
+  export let infiniteAt: null | bigint = null
   export let validate = (_p: bigint) => true
   let inputClass = ""
   export { inputClass as class }
@@ -25,7 +28,7 @@
   export let maxUint = ethers.constants.MaxUint256.toBigInt()
   export const value = writable<null | bigint>(null)
 	const dispatch = createEventDispatcher();
-  value.subscribe(() => {
+  value.subscribe(($value) => {
     dispatch('update', {
       value: $value
     })
@@ -55,12 +58,12 @@
         value.set(parsed)
         return null
       }
-      if (uint && parsed < 0) {
+      if (uint && parsed < 0n) {
         value.set(null)
         return false
       }
-      if (infiniteOver && parsed > infiniteOver) {
-        value.set(infiniteOver)
+      if (infiniteAt && parsed >= infiniteAt) {
+        value.set(infiniteAt)
         text = infinityCharacter
         return true
       }
@@ -68,9 +71,15 @@
         value.set(null)
         return false
       }
-      if (parsed > max || parsed < min) {
-        value.set(null)
-        return false
+      if (!_.isNil(max) && parsed > max) {
+        text = max.toString()
+        value.set(max)
+        return true
+      }
+      if (!_.isNil(min) && parsed < min) {
+        text = min.toString()
+        value.set(min)
+        return true
       }
       if (!validate(parsed)) {
         value.set(null)
@@ -79,6 +88,7 @@
       value.set(parsed)
       return true
     } catch(err) {
+      // console.log(err)
       value.set(null)
       return false
     }

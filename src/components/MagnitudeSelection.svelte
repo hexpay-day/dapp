@@ -2,22 +2,21 @@
   import {
     Label,
     ButtonGroup,
+	InputAddon,
   } from 'flowbite-svelte'
   import IconDropdown from './IconDropdown.svelte'
 	import _ from 'lodash';
-	import type { DropdownOption, MagnitudeSelection } from '../types';
+	import type { DropdownOption } from '../types';
 	import { createEventDispatcher, type SvelteComponent } from 'svelte';
-	import { writable } from 'svelte/store';
 	import DivisibleInput from './DivisibleInput.svelte';
   export let label: string | SvelteComponent = ''
   export let showDenominatorWhenOver = 0
   export let options: DropdownOption[] = []
   export let nullIsZero = false
-  // export let min = 0n
   const dispatch = createEventDispatcher()
-  $: option = options[0]
+  let method = options[0].value
+  $: option = options.find((opt): opt is DropdownOption => opt.value === method) as DropdownOption
   $: placeholder = option.placeholder || '0'
-  let method = 0
 
   $: selection = {
     method: BigInt(method),
@@ -28,12 +27,12 @@
     numerator: bigint;
     denominator: bigint;
   }
-  export const value = writable<MagnitudeSelection>(selection)
   $: dispatch('change', { value: selection })
   export let disableInputDuring: number[] = []
   export let disabledDropdownDuring: number[] = []
   export let showDenominatorNever = false
   export let maxUint = 64
+  export let suffix = ''
   $: maxUintInput = showDenominatorNever || method < showDenominatorWhenOver ? maxUint : maxUint / 2
   const id = _.uniqueId()
   $: showDenominator = !showDenominatorNever && method > showDenominatorWhenOver
@@ -46,7 +45,10 @@
     if (_.isNil(value)) {
       return
     }
-    selection[key] = value
+    selection = {
+      ...selection,
+      [key]: value,
+    }
   }
   $: optionalOptions = options ? { text: option?.inputText } : {}
 </script>
@@ -72,6 +74,9 @@
         {...optionalOptions}
         maxUint={maxUintInput}
         on:update={onUpdate} />
+      {#if suffix}
+      <InputAddon class="font-sans">{suffix}</InputAddon>
+      {/if}
     </ButtonGroup>
   </div>
 </div>

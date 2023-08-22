@@ -1,7 +1,5 @@
-import { derived, writable } from "svelte/store";
+import { derived, get, writable, type Writable } from "svelte/store";
 import * as contracts from './contracts'
-
-// export const currentDay = writable(0)
 
 export const targetDay = writable(1)
 
@@ -54,3 +52,34 @@ export const dateTimeAsString = (target: Date) => {
   const [hours, minutes, ] = time.split(':')
   return `${date} ${hours}:${minutes}`
 }
+
+export const now = writable<Date>(new Date())
+const loop = () => {
+  now.set(new Date())
+  if (typeof window === 'undefined') return
+  requestAnimationFrame(loop)
+}
+loop()
+const getStartDateISO = ($now: Date) => {
+  return truncatedDay(new Date(+$now + DAY))
+}
+export const startDateISO = writable(getStartDateISO(get(now)))
+const getMinDateISO = ($now: Date) => {
+  return new Date(+truncatedDay($now) + (DAY * 2))
+}
+export const minDateISO = writable(getMinDateISO(get(now)))
+export const updateIfChanged = (current: Writable<Date>, challenger: Date) => {
+  if (get(current).toISOString() !== challenger.toISOString()) {
+    current.set(challenger)
+  }
+}
+now.subscribe(($now) => {
+  updateIfChanged(startDateISO, getStartDateISO($now))
+  updateIfChanged(minDateISO, getMinDateISO($now))
+})
+export const startDateLocal = derived([startDateISO], ([$startDateISO]) => {
+  return new Date(+$startDateISO - timezoneOffset($startDateISO))
+})
+export const minDateLocal = derived([minDateISO], ([$minDateISO]) => {
+  return new Date(+$minDateISO + timezoneOffset($minDateISO))
+})

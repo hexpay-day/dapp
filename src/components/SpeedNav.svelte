@@ -15,6 +15,7 @@
     currentDay,
     getCurrentDay,
   } from '../stores/day'
+  import { items } from '../stores/sequence'
 	import { onMount } from 'svelte';
 
   onMount(async () => {
@@ -29,7 +30,8 @@
   const navTo = (type: string) => {
     const url = type === 'end' ? `/${$chainId}/end/${$currentDay}/${defaultOffsetDays}`
       : type === 'start' ? `/${$chainId}/start/`
-      : type === 'maintain' ? `/${$chainId}/maintain/` : ''
+      : type === 'maintain' ? `/${$chainId}/maintain/`
+      : type === 'checkout' ? `/${$chainId}/checkout/` : ''
     if (!url) return
     goto(url)
   }
@@ -44,5 +46,8 @@
   </SpeedDialButton>
   <SpeedDialButton on:click={() => navTo('maintain')} name="Maintain">
     <Icon name="atom-solid" />
+  </SpeedDialButton>
+  <SpeedDialButton disabled={!$items.length} on:click={() => navTo('checkout')} name="Checkout">
+    <Icon name="cart-outline" />
   </SpeedDialButton>
 </SpeedDial>

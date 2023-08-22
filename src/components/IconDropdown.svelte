@@ -17,8 +17,9 @@
 </script>
 
 <Button {disabled} class={className}><Icon size="sm" name="adjustments-horizontal-outline" /></Button>
+{#if !disabled}
 <Dropdown placement="bottom-start" bind:open={dropdownOpen}>
-  {#each options as opt}
+  {#each options.filter((opt) => opt.value !== value) as opt}
   <DropdownItem on:click={() => {
     value = opt.value;
     dropdownOpen = false;
@@ -28,6 +29,7 @@
   }}>{opt.text}</DropdownItem>
   {/each}
 </Dropdown>
+{/if}
 
 <style lang="postcss">
   :global([role=tooltip]) {

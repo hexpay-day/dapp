@@ -21,11 +21,10 @@
   } = web3Store
 
   $: dropdownChains = [...chains.entries()].filter(([current]) => $page.data.chainId !== current)
-  // $: console.log(dropdownChains)
   $: chain = chains.get($page.data.chainId)
 </script>
 
-<div class="container m-auto flex justify-between max-w-5xl h-14 items-center">
+<div class="container m-auto flex justify-between max-w-5xl h-14 items-center p-2">
   <div class="flex items-center">
     <DarkMode class="text-lg bg-gray-200 dark:bg-gray-600 h-[42px] w-[44px] items-center mr-2">
       <svelte:fragment slot="lightIcon">
@@ -50,7 +49,7 @@
     </Dropdown>
   </div>
 </div>
-<div class="container m-auto pt-2 px-2 pb-20">
+<div class="container m-auto pt-2 px-2 pb-20 max-w-5xl">
   <slot />
 </div>
 <SpeedNav />
