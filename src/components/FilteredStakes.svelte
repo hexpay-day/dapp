@@ -4,8 +4,12 @@
   import * as filteredStakesStore from '../stores/filtered-stakes'
   import * as addressesStore from '../stores/addresses'
   import EndSettings from './EndSettings.svelte'
-  import { icons } from 'flowbite-svelte-icons'
+  import {
+    IconChevronDown,
+    IconChevronUp,
+  } from '@tabler/icons-svelte'
 	import { renderHedronIcon } from '../stores/image';
+	// import { IconChevronUp } from '@tabler/icons-svelte';
 
   $: filtered = filteredStakesStore.filtered
 
@@ -15,8 +19,8 @@
     )
   }
   const sizeMultiplier = 1.4
-  const iconExpanded = `<span class="flex justify-center items-center ml-auto w-6 h-6"><svg viewBox="0 0 ${+icons['chevron-down-solid'].width} ${+icons['chevron-down-solid'].height}" height="${+icons['chevron-down-solid'].height * sizeMultiplier}" width="${+icons['chevron-down-solid'].width * sizeMultiplier}">${icons['chevron-down-solid'].svg}</svg></span>`
-  const iconExpand = `<span class="flex justify-center items-center ml-auto w-6 h-6"><svg viewBox="0 0 ${+icons['chevron-up-solid'].width} ${+icons['chevron-up-solid'].height}" height="${+icons['chevron-up-solid'].height * sizeMultiplier}" width="${+icons['chevron-up-solid'].width * sizeMultiplier}">${icons['chevron-up-solid'].svg}</svg></span>`
+  const iconExpanded = `<span class="flex justify-center items-center ml-auto w-6 h-6"><svg viewBox="0 0 ${10} ${7}" height="${7 * sizeMultiplier}" width="${10 * sizeMultiplier}">${IconChevronDown}</svg></span>`
+  const iconExpand = `<span class="flex justify-center items-center ml-auto w-6 h-6"><svg viewBox="0 0 ${10} ${7}" height="${7 * sizeMultiplier}" width="${10 * sizeMultiplier}">${IconChevronUp}</svg></span>`
 </script>
 
 <div>

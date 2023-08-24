@@ -8,7 +8,7 @@
     Input,
   } from 'flowbite-svelte';
   import { DateInput } from 'date-picker-svelte'
-  import { Icon } from 'flowbite-svelte-icons';
+  import { IconAddressBook, IconCirclePlus } from '@tabler/icons-svelte';
   import * as filtersStore from '../stores/filters'
 	import _ from 'lodash';
   import { page } from '$app/stores';
@@ -40,7 +40,7 @@
     today,
     dateToDay,
     launchDate,
-    maxDate,
+    maxDateISO,
     DAY,
   } = dayStore
   const {
@@ -81,7 +81,7 @@
           invalidateAll: true,
         })
       }}
-      max={maxDate}
+      max={$maxDateISO}
       min={launchDate}
       format="yyyy-MM-dd"
       class="flex rounded"
@@ -129,7 +129,7 @@
           invalidateAll: true,
         })
       }}
-      max={new Date(Math.min(+maxDate, +$startDate + (maxOffsetDays * DAY)))}
+      max={new Date(Math.min(+$maxDateISO, +$startDate + (maxOffsetDays * DAY)))}
       min={$startDate}
       format="yyyy-MM-dd"
       class="flex rounded"
@@ -146,7 +146,7 @@
       <Label for="owner-address" class="block mb-2">Owner Address</Label>
       <ButtonGroup class="w-full">
         <InputAddon>
-          <Icon name="adress-book-solid" class="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          <IconAddressBook class="w-4 h-4 text-gray-500 dark:text-gray-400" /> <!-- name="adress-book-solid"-->
         </InputAddon>
         <Input
           color={$isOwnerValueValid ? 'green' : ($isOwnerValueValid === false ? 'red' : 'base')}
@@ -155,7 +155,7 @@
           bind:value={$ownerValue}
           on:keyup={(e) => filtersStore.addAddressToOwner(e.code === 'Enter')} />
         <InputAddon>
-          <Icon name="circle-plus-solid" class="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          <IconCirclePlus class="w-4 h-4 text-gray-500 dark:text-gray-400" /> <!-- name="circle-plus-solid" -->
         </InputAddon>
       </ButtonGroup>
     </div>
@@ -172,7 +172,7 @@
       <Label for="stake-id" class="block mb-2">Stake Id</Label>
       <ButtonGroup class="w-full">
         <InputAddon>
-          <Icon name="adress-book-solid" class="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          <IconAddressBook class="w-4 h-4 text-gray-500 dark:text-gray-400" /> <!-- name="adress-book-solid"-->
         </InputAddon>
         <Input
           color={$isStakeIdValid ? 'green' : ($isStakeIdValid === false ? 'red' : 'base')}
@@ -181,7 +181,7 @@
           bind:value={$stakeIdValue}
           on:keyup={(e) => filtersStore.addStakeIdToList(e.code === 'Enter')} />
         <InputAddon>
-          <Icon name="circle-plus-solid" class="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          <IconCirclePlus class="w-4 h-4 text-gray-500 dark:text-gray-400" /> <!-- name="circle-plus-solid"-->
         </InputAddon>
       </ButtonGroup>
     </div>

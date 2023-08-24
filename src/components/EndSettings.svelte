@@ -1,5 +1,8 @@
 <script lang="ts">
-	import { Icon } from "flowbite-svelte-icons";
+	import {
+    IconCirclePlus,
+    IconFilePencil,
+  } from "@tabler/icons-svelte";
   import * as filteredStakesStore from '../stores/filtered-stakes'
   import * as web3Store from '../stores/web3'
 	import {
@@ -7,6 +10,7 @@
     Dropdown,
     DropdownItem,
   } from "flowbite-svelte";
+	// import { removeFromSequence } from "../stores/sequence";
 
   export let stake!: filteredStakesStore.Stake
   $: timeline = filteredStakesStore.timeline
@@ -30,11 +34,11 @@
   {:else}
     {#if $timeline.find(({ stake: target }) => stake.stakeId === target.stakeId)}
       <Button size="sm" on:click={() => {
-        filteredStakesStore.removeFromTimeline(stake.stakeId)
-      }}>Edit&NonBreakingSpace;<Icon name="file-edit-solid" /></Button>
+        // removeFromSequence(stake)
+      }}>Edit&NonBreakingSpace;<IconFilePencil /></Button> <!-- name="file-edit-solid" -->
     {:else}
     <div class="relative">
-      <Button size="sm">Add&NonBreakingSpace;<Icon name="circle-plus-solid" /></Button>
+      <Button size="sm">Add&NonBreakingSpace;<IconCirclePlus /></Button> <!-- name="circle-plus-solid" -->
       <Dropdown placement="bottom-start">
         <DropdownItem on:click={() => addStakeToTimeline(TimelineTypes.OTHER, stake)}>Other</DropdownItem>
         <DropdownItem on:click={() => addStakeToTimeline(TimelineTypes.GOOD_ACCOUNT, stake)}>Good Account</DropdownItem>

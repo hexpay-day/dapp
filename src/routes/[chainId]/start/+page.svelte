@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { ethers } from "ethers";
   import { balance, fetchData } from "../../../stores/hex";
-  import { chainId, address, connected } from '../../../stores/web3'
+  import { chainId, address, connected, intWithCommas } from '../../../stores/web3'
   import {
     Label,
     Input,
@@ -12,7 +12,11 @@
     Button,
     Dropdown,
   } from 'flowbite-svelte'
-  import { Icon } from 'flowbite-svelte-icons'
+  import {
+    IconCalendar,
+    IconGift,
+    IconShoppingCartPlus,
+  } from '@tabler/icons-svelte'
 	import _ from "lodash";
 	import { DateInput } from 'date-picker-svelte'
 	import DecimalInput from "../../../components/DecimalInput.svelte";
@@ -21,13 +25,15 @@
 	import MagnitudeSelection from "../../../components/MagnitudeSelection.svelte";
 	import * as dayStore from "../../../stores/day";
 	import * as stakeStartStore from "../../../stores/stake-start";
-	import { derived, get, writable } from "svelte/store";
+	import { derived, writable } from "svelte/store";
 	import type { EncodableSettings } from "@hexpayday/stake-manager/artifacts/types";
-	import { TaskType, addToSequence } from "../../../stores/sequence";
+	import { addToSequence } from "../../../stores/sequence";
+  import { FundingOrigin, TaskType } from '../../../types'
+	import { stakeManagerByChainId } from "../../../stores/addresses";
   const {
     useISO,
     timezoneLabel,
-    maxDate,
+    maxDateISO,
     maxDays,
     startDateISO,
     startDateLocal,
@@ -45,7 +51,7 @@
     dateInputValue,
     endDateLocal,
     amountIsValid,
-    showSettings,
+    showSettings: useAdvancedSettings,
     othersCanEnd,
     canMintHedronAtAnyTime,
     shouldMintHedronAtEnd,
@@ -58,20 +64,29 @@
     hedronTipSelection,
     disableRepeatStakeAmountDropdownDuring,
     repeatStakeAmountOptions,
-    tips,
     updateEndDateFromDay,
     handleDayUpdate,
+    validatedAccount,
+    copyIterations,
+    fundFromWallet,
+    startStakeFromUnattributed,
   } = stakeStartStore
   $: fetchData($chainId, $address)
   const id = _.uniqueId()
-  const validatedAccount = derived([account], ([$account]) => {
-    return ethers.utils.isAddress($account) ? $account : null
-  })
-  const copyIterations = writable(255)
+  const resetInputs = () => {
+    amount.set('')
+    stakeStartStore.resetEndDay()
+  }
   $: settings = {
+    contract: stakeManagerByChainId.get($chainId) || ethers.constants.AddressZero,
     lockedDays: $lockedDays,
-    for: $validatedAccount,
+    for: $validatedAccount || ethers.constants.AddressZero,
     amount: $amountIsValid ? $amount : null,
+    fundingFromAddress: $fundFromWallet,
+    useAdvancedSettings: $useAdvancedSettings,
+    fundingOrigin: $fundFromWallet ? FundingOrigin.connected : (
+      $startStakeFromUnattributed ? FundingOrigin.unattributed : FundingOrigin.deposited
+    ),
     settings: {
       tipMethod: $hexTipSelection.method,
       tipMagnitude: '0x'+(
@@ -133,7 +148,7 @@
           Start: {dateTimeAsString($useISO ? $startDateISO : $startDateLocal)} {$timezoneLabel}
         </Label>
         <ButtonGroup class="flex flex-shrink">
-          <Button color="primary" disabled={+$lockedDays === maxDays} on:click={() => updateEndDateFromDay(BigInt(maxDays))}>MAX</Button>
+          <Button color="primary" class="px-3" disabled={+$lockedDays === maxDays} on:click={() => updateEndDateFromDay(BigInt(maxDays))}>MAX</Button>
           <DecimalInput
             uint
             text={$lockedDays}
@@ -150,7 +165,7 @@
         <Label for="days-input" class="text-right">End Date/Time</Label>
         <Label class="flex flex-row font-normal stake-start-cal-select">
           <InputAddon class="justify-center flex-none">
-            <Icon name="calendar-week-outline" class="mx-1" size="sm" />
+            <IconCalendar class="mx-1" />
           </InputAddon>
           <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
           <div role="group" class="flex-grow" on:keypress={() => {}} on:click|preventDefault={(e) => {}}>
@@ -161,7 +176,7 @@
               browseWithoutSelecting
               closeOnSelection
               min={$useISO ? $minDateLocal : $minDateISO}
-              max={maxDate}
+              max={$maxDateISO}
               on:select={() => {
                 const timezoneOffsetDelta = timezoneOffset($endDateLocal) - timezoneOffset($dateInputValue)
                 endDateLocal.set($useISO
@@ -174,29 +189,40 @@
     </div>
   </div>
   <div class="flex flex-col">
-    <Label for="amount-input">Amount</Label>
-    <ButtonGroup>
-      <Button
-        color="primary"
-        disabled={$balance === 0n || BigInt($amount) === $balance}
-        on:click={() => updateEndDateFromDay($balance)}>MAX</Button>
-      <DecimalInput
-        class="text-right text-base leading-[1.25rem]"
-        placeholder="1234.567" />
-      <InputAddon>HEX</InputAddon>
-    </ButtonGroup>
-    {#if $amountIsValid}
-    <Helper class="text-sm text-right">{ethers.utils.parseUnits($amount, 8).toBigInt()} Hearts</Helper>
-    {/if}
+    <div class="flex flex-row">
+      <Toggle class="mt-5" bind:checked={$fundFromWallet} />
+      <div class="flex flex-col flex-grow">
+        <Label for="amount-input">Fund from {$fundFromWallet ? 'Connected Wallet' : 'Contract Balance'}</Label>
+        <div class="flex flex-row">
+          <ButtonGroup class="flex-grow">
+            <Button
+              color="primary"
+              class="px-3"
+              disabled={!$amountIsValid ? $amount === null : ($amount ? BigInt($amount) >= $balance : false)}
+              on:click={() => amount.set(`${$balance}`)}>MAX</Button>
+            <DecimalInput
+              max={$balance}
+              decimals={8}
+              on:update={(e) => amount.set(`${e.detail.value}`)}
+              text={$amountIsValid && $amount ? ethers.utils.formatUnits($amount, 8) : ''}
+              class="text-right text-base leading-[1.25rem]"
+              placeholder="1234.567" />
+            <InputAddon>HEX</InputAddon>
+          </ButtonGroup>
+        </div>
+      </div>
+    </div>
+    <Helper class="text-sm text-right">{#if $amountIsValid && $amount}{intWithCommas(BigInt($amount))} Hearts{:else}&nbsp;{/if}</Helper>
   </div>
   <div class="flex flex-col col-span-1">
     <div class="grid grid-cols-2">
       <div class="flex flex-col col-span-1 items-start">
-        <Button class="h-[42px] mt-5" on:click={() => {
-          showSettings.set(!$showSettings)
-        }}><span class="min-w-[6rem]">{$showSettings ? 'Hide' : 'Show'} Settings</span><Icon class="ml-2" name="adjustments-vertical-outline" /></Button>
+        <Label class="flex flex-row mt-5 leading-[42px]">
+          <span class="flex items-center mr-4 flex-shrink">Use Advanced</span>
+          <Toggle bind:checked={$useAdvancedSettings} />
+        </Label>
       </div>
-      {#if $showSettings}
+      {#if $useAdvancedSettings}
       <div class="flex flex-col col-span-1">
         <Button class="h-[42px] mt-5">Abilities</Button>
         <Dropdown class="w-80" placement="bottom-start">
@@ -220,12 +246,18 @@
             <Toggle bind:checked={$allowStakeToBeTransferred}>Allow Stake to be Transferred</Toggle>
             <Helper class="pl-14">Allow the owner of the stake to change. Can only be turned off after stake start.</Helper>
           </Label>
+          {#if !$fundFromWallet}
+          <Label class="p-2">
+            <Toggle bind:checked={$startStakeFromUnattributed}>Start Stake from Unattributed</Toggle>
+            <Helper class="pl-14">Use unattributed tokens already deposited in contract to start stake.</Helper>
+          </Label>
+          {/if}
         </Dropdown>
       </div>
       {/if}
     </div>
   </div>
-  {#if $showSettings}
+  {#if $useAdvancedSettings}
   <div class="flex flex-col col-span-1">
     <Label for="restart-count-{id}">Copy Settings on Restart</Label>
     <DecimalInput
@@ -248,21 +280,14 @@
     <Label for="owner-input" defaultClass="flex flex-row">
       <Toggle bind:checked={$fundOther} />
       {#if !$fundOther}
-      <Button size="md" class="h-[42px]" on:click={() => { fundOther.set(true) } }><Icon name="gift-box-outline" /></Button>
+      <Button size="md" class="h-[42px]" on:click={() => { fundOther.set(true) } }><IconGift /></Button>
       {:else}
       <Input id="owner-input" class="text-base leading-[1.25rem]" bind:value={$account} color={$validAccount ? 'green' : 'red'} />
       {/if}
     </Label>
   </div>
   <div class="flex flex-col col-span-1">
-    <!-- link repeat previous +  -->
     <div class="flex flex-row">
-      <!-- <div class="flex flex-col">
-        <Label for="repeat-toggle">Repeat</Label>
-        <div class="flex flex-grow">
-          <Toggle id="repeat-toggle" class="justify-center" bind:checked={$shouldRepeatStake} />
-        </div>
-      </div> -->
       <div class="flex flex-col flex-grow">
         <MagnitudeSelection
           label="Repeat Stake Days"
@@ -271,7 +296,8 @@
           nullIsZero
           disableInputDuring={[0, 2, 3]}
           maxUint={16}
-          options={$repeatStakeDaysOptions} />
+          options={$repeatStakeDaysOptions}
+          suffix="Day(s)" />
       </div>
     </div>
   </div>
@@ -361,10 +387,11 @@
     </div>
   </div>
   {/if}
-  <div class="flex flex-col col-span-{$showSettings ? '2' : '1'} items-end">
-    <Button class="h-[42px] mt-5" on:click={() => {
+  <div class="flex flex-col col-span-{$useAdvancedSettings ? '2' : '1'} items-end">
+    <Button disabled={!$amountIsValid} class="h-[42px] mt-5" on:click={() => {
       addToSequence(TaskType.start, settings)
-    }}>Add to Sequence<Icon class="ml-2" name="cart-plus-alt-outline" /></Button>
+      resetInputs()
+    }}>Add to Sequence<IconShoppingCartPlus class="ml-2" /></Button>
   </div>
   {/if}
 </div>

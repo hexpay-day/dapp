@@ -3,6 +3,7 @@ import * as ethers from 'ethers'
 import type { SwitchChainError } from 'viem'
 import { mainnet, pulsechain, pulsechainV4 } from '@wagmi/chains'
 import type { Chain } from '@wagmi/core'
+import { fetchData } from './hex'
 
 export const connectable = writable(false)
 export const connected = writable(false)
@@ -115,11 +116,17 @@ export const facilitateConnect = async () => {
   address.set(addr)
   connected.set(true)
   chainId.set(chId)
-  await fetchNetworkInfo()
+  await Promise.all([
+    fetchNetworkInfo(),
+    fetchData(chId, addr),
+  ])
 }
 
 export const facilitateDisconnect = async () => {
   address.set(ethers.constants.AddressZero)
   signer.set(null)
   connected.set(false)
+}
+export const intWithCommas = (x: bigint | number, delimiter = '_') => {
+  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, delimiter);
 }

@@ -72,12 +72,12 @@
         return false
       }
       if (!_.isNil(max) && parsed > max) {
-        text = max.toString()
+        text = ethers.utils.formatUnits(max, decimals)
         value.set(max)
         return true
       }
       if (!_.isNil(min) && parsed < min) {
-        text = min.toString()
+        text = ethers.utils.formatUnits(min, decimals)
         value.set(min)
         return true
       }

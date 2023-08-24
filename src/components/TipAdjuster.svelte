@@ -7,7 +7,7 @@
 	import type { Tip } from '../types';
 	import { currencyMetadata } from '../stores/tip';
 	import { ethers } from 'ethers';
-	import { Icon } from 'flowbite-svelte-icons';
+  import { IconCaretDown, IconGridDots } from '@tabler/icons-svelte'
 	import { createEventDispatcher } from 'svelte';
 	import { get } from 'svelte/store';
   const dispatch = createEventDispatcher()
@@ -34,7 +34,7 @@
 {:then metadata}
 <div class="flex flex-grow">
   <ButtonGroup divClass="flex flex-grow">
-    <Button><Icon name="caret-down-outline" size="sm" /></Button>
+    <Button><IconCaretDown /></Button> <!-- name="caret-down-outline" size="sm"-->
     <DecimalInput
       on:update={(e) => { updatedTip.limit = e.detail.value }}
       decimals={metadata.decimals}
@@ -87,7 +87,7 @@
       dispatch('create', {
         value: updatedTip,
       })
-    }} >Add&nbsp;Tip<Icon class="ml-2" name="grid-plus-outline" /></Button>
+    }} >Add&nbsp;Tip<IconGridDots class="ml-2" /></Button> <!-- name="grid-plus-outline"-->
   {/if}
 </ButtonGroup>
 {/await}

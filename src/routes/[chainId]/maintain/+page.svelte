@@ -5,13 +5,13 @@
   import {
     Button,
   } from 'flowbite-svelte'
-  import { Icon } from 'flowbite-svelte-icons'
+  import { IconPlus } from '@tabler/icons-svelte'
   $: fetchData($chainId, $address)
 </script>
 <div class="flex max-w-5xl m-auto">
 {#if !$maintainable.length}
 <a href="/{$chainId}/start">
-  <Button>New Stake&NonBreakingSpace;&NonBreakingSpace;<Icon name="plus-solid" size="sm" /></Button>
+  <Button>New Stake&NonBreakingSpace;&NonBreakingSpace;<IconPlus /></Button>
 </a>
 {/if}
 </div>

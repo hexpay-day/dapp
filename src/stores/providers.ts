@@ -1,7 +1,7 @@
 import * as ethers from 'ethers'
 
 const urls = new Map<number, string>([
-  [1, 'https://endpoints.omniatech.io/v1/eth/mainnet/public'],
+  [1, 'https://eth.llamarpc.com	'],
   [369, 'https://rpc.pulsechain.com'],
   [943, 'https://rpc.v4.testnet.pulsechain.com'],
 ])

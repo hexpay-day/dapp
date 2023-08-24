@@ -42,14 +42,10 @@ export const isOptimizable = (stake: Stake) => {
     || addressStore.perpetuals.has(ethers.utils.getAddress(stake.owner))
 }
 
-export const removeFromTimeline = (stakeId: number) => {
-  timeline.update((list) => (
-    list.filter((item) => item.stake.stakeId !== stakeId)
-  ))
-}
-
 export const addStakeToTimeline = (type: TimelineTypes, stake: Stake) => {
-  removeFromTimeline(stake.stakeId)
+  if (stake.stakeId) {
+    // removeFromTimelineById(stake.stakeId)
+  }
   timeline.update((list) => (
     list.concat({
       type,

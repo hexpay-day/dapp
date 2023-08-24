@@ -1,3 +1,6 @@
+import type { EncodableSettings } from "@hexpayday/stake-manager/artifacts/types";
+import type { BigNumberish } from "ethers";
+
 export type Stake = {}
 
 export type StakesLoadParams = {
@@ -97,4 +100,36 @@ export type Tip = {
   limit: bigint;
   numerator: bigint;
   denominator: bigint;
+}
+
+export enum TaskType {
+  start,
+}
+
+// export type TaskType = keyof taskTypes
+
+export enum FundingOrigin {
+  connected,
+  deposited,
+  unattributed,
+}
+
+export type StakeStartStep = {
+  // fund from contract or from balance
+  // assume from balance for now
+  amount: BigNumberish | null;
+  for: string;
+  lockedDays: string;
+  settings: EncodableSettings.SettingsStruct;
+  contract: string;
+  fundingOrigin: FundingOrigin;
+  useAdvancedSettings: boolean;
+}
+
+export type Tasks = StakeStartStep;
+
+export type Step = {
+  task: Tasks;
+  type: TaskType;
+  invalid?: boolean;
 }

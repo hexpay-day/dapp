@@ -19,7 +19,7 @@ export const getCurrentDay = async () => {
 
 export const useISO = writable<boolean>(false)
 export const timezoneLabel = derived([useISO], ([$useISO]) => (
-  $useISO ? 'iso' : 'local'
+  $useISO ? 'utc' : 'local'
 ))
 
 export const launchDate = new Date('2019-12-03')
@@ -36,7 +36,6 @@ export const truncatedDay = (target: Date) => {
 export const maxDays = 5_555
 export const timezoneOffset = (d = new Date()) => d.getTimezoneOffset() * MIN
 export const currentDay = writable<number | null>(null)
-export const maxDate = new Date(+today() + DAY + (DAY * maxDays))
 export const dateToDay = (d: Date) => {
   return Math.floor((+d - +launchDate) / DAY)
 }
@@ -73,9 +72,14 @@ export const updateIfChanged = (current: Writable<Date>, challenger: Date) => {
     current.set(challenger)
   }
 }
+export const getMaxDateISO = ($now: Date) => {
+  return new Date(+$now + DAY + (DAY * maxDays))
+}
+export const maxDateISO = writable(getMaxDateISO(get(now)))
 now.subscribe(($now) => {
   updateIfChanged(startDateISO, getStartDateISO($now))
   updateIfChanged(minDateISO, getMinDateISO($now))
+  updateIfChanged(maxDateISO, getMaxDateISO($now))
 })
 export const startDateLocal = derived([startDateISO], ([$startDateISO]) => {
   return new Date(+$startDateISO - timezoneOffset($startDateISO))

@@ -4,9 +4,6 @@
     SpeedDial,
     SpeedDialButton,
   } from 'flowbite-svelte'
-  import {
-    Icon,
-  } from 'flowbite-svelte-icons'
 	import { goto } from "$app/navigation";
   import {
     defaultOffsetDays,
@@ -15,8 +12,9 @@
     currentDay,
     getCurrentDay,
   } from '../stores/day'
-  import { items } from '../stores/sequence'
 	import { onMount } from 'svelte';
+  import FilterPath from './FilterPath.svelte'
+	import { IconAtom2, IconFlame, IconSearch, IconShoppingCart } from '@tabler/icons-svelte';
 
   onMount(async () => {
     if ($currentDay) {
@@ -35,19 +33,36 @@
     if (!url) return
     goto(url)
   }
+  const routes = [{
+    key: 'start',
+    name: 'Start',
+    icon: 'fire',
+  }, {
+    key: 'end',
+    name: 'End',
+    icon: 'search',
+  }, {
+    key: 'maintain',
+    name: 'Maintain',
+    icon: 'atom-2',
+  }, {
+    key: 'checkout',
+    name: 'Checkout',
+    icon: 'cart',
+  }]
 </script>
 
-<SpeedDial defaultClass="fixed right-4 bottom-14 z-30">
-  <SpeedDialButton on:click={() => navTo('start')} name="Start">
-    <Icon name="wand-magic-sparkles-outline" />
-  </SpeedDialButton>
-  <SpeedDialButton on:click={() => navTo('end')} name="End">
-    <Icon name="search-outline" />
-  </SpeedDialButton>
-  <SpeedDialButton on:click={() => navTo('maintain')} name="Maintain">
-    <Icon name="atom-solid" />
-  </SpeedDialButton>
-  <SpeedDialButton disabled={!$items.length} on:click={() => navTo('checkout')} name="Checkout">
-    <Icon name="cart-outline" />
-  </SpeedDialButton>
+<SpeedDial defaultClass="fixed right-4 bottom-14 z-30" trigger="hover">
+  {#each routes as route}
+  <FilterPath path={route.key}>
+    <SpeedDialButton on:click={() => navTo(route.key)} name={route.name}>
+      <!-- <Icon name={route.icon} /> -->
+      {#if route.icon === 'fire'}<IconFlame />
+      {:else if route.icon === 'search'}<IconSearch />
+      {:else if route.icon === 'atom-2'}<IconAtom2 />
+      {:else if route.icon === 'cart'}<IconShoppingCart />
+      {/if}
+    </SpeedDialButton>
+  </FilterPath>
+  {/each}
 </SpeedDial>

@@ -4,7 +4,7 @@
     Dropdown,
     DropdownItem,
   } from 'flowbite-svelte'
-  import { Icon } from 'flowbite-svelte-icons';
+  import { IconAdjustments } from '@tabler/icons-svelte'
 	import type { DropdownOption } from '../types';
 	import { createEventDispatcher } from 'svelte';
   let dropdownOpen = false
@@ -16,7 +16,7 @@
   const dispatch = createEventDispatcher();
 </script>
 
-<Button {disabled} class={className}><Icon size="sm" name="adjustments-horizontal-outline" /></Button>
+<Button {disabled} class={className}><IconAdjustments /></Button> <!-- size="sm" name="adjustments-horizontal-outline"-->
 {#if !disabled}
 <Dropdown placement="bottom-start" bind:open={dropdownOpen}>
   {#each options.filter((opt) => opt.value !== value) as opt}

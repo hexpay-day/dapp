@@ -114,3 +114,5 @@ declare global {
     ethereum: import('ethers').providers.ExternalProvider;
   }
 }
+import type { SvelteComponentTyped } from "svelte";
+class ComponentName extends SvelteComponentTyped<{propertyName: string;}> {}

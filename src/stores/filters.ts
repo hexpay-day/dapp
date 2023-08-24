@@ -28,6 +28,7 @@ export const addAddressToOwner = async (submission: boolean) => {
 export const addAddressToOwnerRaw = async (_hash: string, submission: boolean) => {
   let hash = _hash
   const p = provider()
+  if (!p) return
   let ens
   // let isValid: null | boolean = null
   if (!ownerValue) {

@@ -85,14 +85,19 @@ export const shouldMintHedronAtEnd = writable(true)
 export const contractCustodyTokens = writable(true)
 export const allowStakeToBeTransferred = writable(false)
 export const fundOther = writable(false)
+export const copyIterations = writable(255)
+export const fundFromWallet = writable(true)
+export const startStakeFromUnattributed = writable(false)
 export const handleDayUpdate = (e: unknown) => {
   const days = (e as CustomEvent).detail.value as null | bigint
-  console.log(days)
   if (!days) return
   updateEndDateFromDay(days)
 }
 export const updateEndDateFromDay = (days: bigint) => {
   endDateLocal.set(new Date(+get(minDateISO) + (parseInt(days.toString(), 10) * DAY) - DAY))
+}
+export const resetEndDay = () => {
+  endDateLocal.set(get(minDateISO))
 }
 export const tips = writable<Tip[]>([])
 export const setting = writable<EncodableSettings.SettingsStruct>({
@@ -156,3 +161,7 @@ export const repeatStakeAmountOptions = derived([newStakeDaysSelection], ([$newS
   text: '% of Yield',
   inputText: '',
 })))
+
+export const validatedAccount = derived([account], ([$account]) => {
+  return ethers.utils.isAddress($account) ? $account : null
+})

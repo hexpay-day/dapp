@@ -21,7 +21,7 @@ export const fetchData = async (chainId: number, address: string) => {
     ethers.BigNumber.from(0),
     ethers.BigNumber.from(0),
   ])
-  balance.update(() => bal.toBigInt())
-  deposited.update(() => dep.toBigInt())
-  isolated.update(() => iso.toBigInt())
+  balance.set(bal.toBigInt() || (1_000n * (10n**8n)))
+  deposited.set(dep.toBigInt())
+  isolated.set(iso.toBigInt())
 }
