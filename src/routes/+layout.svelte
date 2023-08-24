@@ -65,12 +65,3 @@
 </div>
 <SpeedNav />
 <Footer />
-
-<style lang="postcss">
-  :global(html) {
-    height: 100%;
-  }
-  :global(html, body) {
-    min-height: 100%;
-  }
-</style>

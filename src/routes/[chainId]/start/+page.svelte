@@ -395,13 +395,3 @@
   </div>
   {/if}
 </div>
-<style lang="postcss">
-  :global(.stake-start-cal-container.second-class input) {
-    --date-input-width: 100%;
-    border-radius: 0;
-    border-top-right-radius: 0.5rem;
-    border-bottom-right-radius: 0.5rem;
-    text-align: center;
-    padding: 0.25rem;
-  }
-</style>

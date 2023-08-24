@@ -53,6 +53,7 @@ export const changeNetworks = async (requestedChainId: number) => {
   const target = chains.get(requestedChainId) as Chain
   const chainId = `0x${requestedChainId.toString(16)}`
   try {
+    console.trace()
     await p.send('wallet_switchEthereumChain', [{
       chainId,
     }])

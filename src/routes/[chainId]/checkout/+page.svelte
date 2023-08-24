@@ -1,6 +1,6 @@
 <script lang="ts">
   import {
-	Button,
+    Button,
     ButtonGroup,
     Timeline,
     TimelineItem,
@@ -9,14 +9,15 @@
   import { FundingOrigin, TaskType, } from '../../../types'
   import {
     IconCircleKey,
-    IconDoorEnter,
     IconFlame,
     IconWallet,
     IconFileCode,
-    IconSquareRoundedX,
     IconChevronRight,
     IconClock,
-    IconDoorExit,
+    IconOutbound,
+    IconChevronsRight,
+    IconX,
+	IconFingerprint,
   } from '@tabler/icons-svelte'
   import HexIcon from '../../../components/icons/Hex.svelte'
 	import {
@@ -40,8 +41,8 @@ nothing to check out
   {#each $ordered as group}
   <li class="ml-6 mb-4">
     <span class="flex absolute -left-3 justify-center items-center w-6 h-6 bg-primary-200 rounded-full ring-8 ring-white dark:ring-gray-900 dark:bg-primary-900">
-      <IconChevronRight class="w-3 h-3 text-primary-600 dark:text-primary-400" />
-      <IconDoorEnter />
+      <!-- <IconChevronRight class="w-4 h-4 text-primary-600 dark:text-primary-400" /> -->
+      <IconOutbound class="w-4 h-4 text-primary-600 dark:text-primary-400" />
     </span>
     <h3 class="flex items-center mb-1 text-xl font-semibold text-gray-900 dark:text-white">{group.name}</h3>
   </li>
@@ -51,7 +52,7 @@ nothing to check out
       <TimelineItem title="Start Stake">
         <svelte:fragment slot="icon">
           <span class="flex absolute -left-3 justify-center items-center w-6 h-6 bg-primary-200 rounded-full ring-8 ring-white dark:ring-gray-900 dark:bg-primary-900">
-            <IconFlame class="w-3 h-3 text-primary-600 dark:text-primary-400" />
+            <IconFlame class="w-4 h-4 text-primary-600 dark:text-primary-400" />
           </span>
         </svelte:fragment>
         <div class="flex flex-col space-y-2">
@@ -68,24 +69,24 @@ nothing to check out
               {/if}
               <Button class="flex">{(item.task.amount ? ethers.utils.formatUnits(item.task.amount, 8) : '0.0')} <HexIcon class="ml-2" size={24} /></Button>
               {#if item.task.fundingOrigin === FundingOrigin.connected}
-              <Button class="flex"><IconChevronRight class="w-3 h-3" /></Button>
+              <Button class="flex"><IconChevronRight class="w-4 h-4" /></Button>
               <Button class="flex" title="{item.task.contract}"><IconFileCode /></Button>
               {/if}
               <Button class="flex"><IconFlame /></Button>
               <Button class="flex">{elipsisAddress(item.task.for, 4)}</Button>
-              <Button class="flex"><IconCircleKey /></Button>
+              <Button class="flex"><IconFingerprint /></Button>
             </ButtonGroup>
           </div>
           <div class="flex flex-row justify-between">
             <ButtonGroup>
-              <Button><IconClock /></Button>
-              <Button>{dateTimeAsString($useISO ? $startDateISO : $startDateLocal)} {$timezoneLabel}</Button>
-              <Button color="alternative"><IconCircleKey class="mr-2" />{item.task.lockedDays} Days</Button>
-              <Button>{dateTimeAsString(new Date(+($useISO ? $startDateISO : $startDateLocal) + (DAY * +item.task.lockedDays)))} {$timezoneLabel}</Button>
+              <Button class="py-2"><IconClock /></Button>
+              <Button class="py-2">{dateTimeAsString($useISO ? $startDateISO : $startDateLocal)} {$timezoneLabel}</Button>
+              <Button class="py-2"><IconCircleKey class="mr-2" />{item.task.lockedDays} Day(s)</Button>
+              <Button class="py-2">{dateTimeAsString(new Date(+($useISO ? $startDateISO : $startDateLocal) + (DAY * +item.task.lockedDays)))} {$timezoneLabel}</Button>
             </ButtonGroup>
-            <Button on:click={() => {
+            <Button class="py-2 px-3" on:click={() => {
               removeFromSequence(item)
-            }}><IconSquareRoundedX /></Button>
+            }}><IconX /></Button>
           </div>
         </div>
       </TimelineItem>
@@ -103,7 +104,7 @@ nothing to check out
   <li class="ml-6">
     <div class="flex absolute -left-3 justify-center items-center w-6 h-6 bg-primary-200 rounded-full ring-8 ring-white dark:ring-gray-900 dark:bg-primary-900"></div>
     <span class="flex absolute -left-3 justify-center items-center w-6 h-6 bg-primary-200 rounded-full ring-8 ring-white dark:ring-gray-900 dark:bg-primary-900">
-      <IconDoorExit class="w-3 h-3 text-primary-600 dark:text-primary-400" />
+      <IconChevronsRight class="w-4 h-4 text-primary-600 dark:text-primary-400" />
     </span>
     <h3 class="flex items-center mb-1 text-xl font-semibold text-gray-900 dark:text-white">Finish</h3>
   </li>

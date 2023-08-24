@@ -108,13 +108,3 @@
   class={`${inputClass} decimal-input`}
   {placeholder}
   color={disabled ? 'base' : amountIsValid ? 'green' : amountIsValid === false ? 'red' : 'base'} />
-
-<style lang="postcss">
-  :global(.decimal-input) {
-    @apply border-l-[1px] z-10;
-  }
-  :global(.decimal-input:focus + button) {
-    @apply border-l-transparent;
-    z-index: 9;
-  }
-</style>

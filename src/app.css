@@ -1,3 +1,32 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+html {
+  height: 100%;
+}
+html, body {
+  min-height: 100%;
+}
+
+.decimal-input {
+  @apply border-l-[1px] z-10;
+}
+.decimal-input:focus + button {
+  @apply border-l-transparent;
+  z-index: 9;
+}
+
+[role=tooltip] {
+  @apply z-20;
+}
+
+.stake-start-cal-container.second-class input {
+  --date-input-width: 100%;
+  border-radius: 0;
+  border-top-right-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  text-align: center;
+  padding: 0.25rem;
+}

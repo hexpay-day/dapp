@@ -30,9 +30,3 @@
   {/each}
 </Dropdown>
 {/if}
-
-<style lang="postcss">
-  :global([role=tooltip]) {
-    @apply z-20;
-  }
-</style>
