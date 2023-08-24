@@ -8,7 +8,8 @@
     Input,
   } from 'flowbite-svelte';
   import { DateInput } from 'date-picker-svelte'
-  import { IconAddressBook, IconCirclePlus } from '@tabler/icons-svelte';
+  import IconAddressBook from '@tabler/icons-svelte/dist/svelte/icons/IconAddressBook.svelte'
+  import IconCirclePlus from '@tabler/icons-svelte/dist/svelte/icons/IconCirclePlus.svelte'
   import * as filtersStore from '../stores/filters'
 	import _ from 'lodash';
   import { page } from '$app/stores';

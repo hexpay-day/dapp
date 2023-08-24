@@ -32,6 +32,7 @@ export const chains = new Map<number, Chain>([
 ])
 
 export const rpcs = new Map<number, string>([
+  [1, 'https://eth.llamarpc.com'],
   [369, 'https://rpc.pulsechain.com'],
   [943, 'https://rpc.v4.testnet.pulsechain.com'],
 ])
@@ -53,7 +54,6 @@ export const changeNetworks = async (requestedChainId: number) => {
   const target = chains.get(requestedChainId) as Chain
   const chainId = `0x${requestedChainId.toString(16)}`
   try {
-    console.trace()
     await p.send('wallet_switchEthereumChain', [{
       chainId,
     }])
@@ -61,14 +61,23 @@ export const changeNetworks = async (requestedChainId: number) => {
     const switchError = err as SwitchChainError
     if (switchError.code === 4902) {
       try {
+        console.log(target)
         await p.send('wallet_addEthereumChain', [
           {
             chainId,
             chainName: target.name,
-            rpcUrls: target.rpcUrls.public,
+            nativeCurrency: target.nativeCurrency,
+            blockExplorerUrls: [
+              target.blockExplorers?.default.url,
+            ],
+            rpcUrls: [
+              ...target.rpcUrls.public.http,
+              ...(target.rpcUrls.public?.webSocket || []),
+            ],
           },
         ]);
       } catch (addError) {
+        console.log(addError)
         // handle "add" error
         throw addError
       }

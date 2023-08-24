@@ -60,21 +60,26 @@ nothing to check out
             <ButtonGroup divClass="flex flex-row h-[42px]">
               <Button class="flex">
                 {#if item.task.fundingOrigin === FundingOrigin.connected}
-                <IconWallet />
-                {:else}<IconFileCode />
+                <IconWallet class="mr-2" />{elipsisAddress($address, 4)}
+                {:else}<IconFileCode /><IconFingerprint class="ml-2" />
                 {/if}
               </Button>
               {#if item.task.fundingOrigin === FundingOrigin.connected}
-              <Button class="flex">{elipsisAddress($address, 4)}</Button>
+              <Button class="flex">
+                <HexIcon class="mr-2" size={24} />
+                {(item.task.amount ? ethers.utils.formatUnits(item.task.amount, 8) : '0.0')}
+              </Button>
+              <Button class="flex" title="{item.task.contract}">
+                <IconChevronRight class="w-4 h-4 mr-2" />
+                <IconFileCode />
+              </Button>
               {/if}
-              <Button class="flex">{(item.task.amount ? ethers.utils.formatUnits(item.task.amount, 8) : '0.0')} <HexIcon class="ml-2" size={24} /></Button>
-              {#if item.task.fundingOrigin === FundingOrigin.connected}
-              <Button class="flex"><IconChevronRight class="w-4 h-4" /></Button>
-              <Button class="flex" title="{item.task.contract}"><IconFileCode /></Button>
-              {/if}
-              <Button class="flex"><IconFlame /></Button>
-              <Button class="flex">{elipsisAddress(item.task.for, 4)}</Button>
-              <Button class="flex"><IconFingerprint /></Button>
+              <Button class="flex">
+                <HexIcon class="mr-2" size={24} />
+                {(item.task.amount ? ethers.utils.formatUnits(item.task.amount, 8) : '0.0')}
+                <IconFlame />
+              </Button>
+              <Button class="flex">{elipsisAddress(item.task.for, 4)}<IconFingerprint class="ml-2" /></Button>
             </ButtonGroup>
           </div>
           <div class="flex flex-row justify-between">

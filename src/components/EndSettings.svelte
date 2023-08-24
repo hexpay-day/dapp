@@ -10,7 +10,6 @@
     Dropdown,
     DropdownItem,
   } from "flowbite-svelte";
-	// import { removeFromSequence } from "../stores/sequence";
 
   export let stake!: filteredStakesStore.Stake
   $: timeline = filteredStakesStore.timeline
@@ -19,11 +18,6 @@
     TimelineTypes,
     addStakeToTimeline,
   } = filteredStakesStore
-  /**
-   *  on:click={() => {
-      filteredStakesStore.addStakeToTimeline(stake)
-    }}
-   */
 </script>
 
 <div class="flex">

@@ -9,7 +9,6 @@
     IconChevronUp,
   } from '@tabler/icons-svelte'
 	import { renderHedronIcon } from '../stores/image';
-	// import { IconChevronUp } from '@tabler/icons-svelte';
 
   $: filtered = filteredStakesStore.filtered
 

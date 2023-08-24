@@ -5,7 +5,7 @@ import { derived, get } from "svelte/store";
 import { scoped, setScoped } from './local'
 import { writable } from 'svelte/store'
 import { balance } from "./hex";
-import { address, chainId } from "./web3";
+import { address, chainId, signer } from "./web3";
 import type { Step, Tasks } from "../types";
 import { TaskType, FundingOrigin } from '../types'
 
@@ -75,7 +75,11 @@ export const executeList = async ($group: TaskGroup) => {
   if (invalid) {
     return null
   }
-  const contracts = all(get(chainId))
+  const s = get(signer)
+  if (!s) {
+    throw new Error('not connected to wallet')
+  }
+  const contracts = all(get(chainId), s)
   if (items.length === 1 && useOptimizedPath(items[0])) {
     // do not wrap in a multicall - call direct
     const [item] = items
