@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { IconChevronRight } from '@tabler/icons-svelte';
+	import { IconLogout } from '@tabler/icons-svelte';
 	import { elipsisAddress } from '../stores/addresses';
   import {
     chainId,
@@ -24,7 +24,7 @@
 <ButtonGroup>
   <Button class="h-[42px]">{elipsisAddress($address)}</Button>
   <Button on:click={disconnect} color="primary" class="px-3">
-    <IconChevronRight size={20} />
+    <IconLogout size={20} />
   </Button>
 </ButtonGroup>
 {:else}

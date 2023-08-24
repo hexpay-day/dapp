@@ -52,7 +52,7 @@ const defaultState = (key: string): Writable<{
 const memoryCache = new Map<string, ReturnType<typeof defaultState>>()
 
 export const scoped = derived([key], ([$key]) => {
-  console.log('loading key', $key)
+  console.log('loading key %o', $key)
   const cached = memoryCache.get($key) || writable($key, get(defaultState($key)))
   memoryCache.set($key, cached)
   return cached
