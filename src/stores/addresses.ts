@@ -9,7 +9,7 @@ export const stakeManagerByChainId = new Map<number, string>([
   [943, StakeManager],
 ])
 
-export const elipsisAddress = (addr: string, offset = 6) => `${addr.slice(0, offset + 2)}...${addr.slice(-offset)}`
+export const ellipsisAddress = (addr: string, offset = 6) => `${addr.slice(0, offset + 2)}...${addr.slice(-offset)}`
 
 export const perpetuals = new Set<string>([
   '0x0d86EB9f43C57f6FF3BC9E23D8F9d82503f0e84b',

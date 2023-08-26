@@ -3,6 +3,7 @@ import { derived, get, writable as w, type Writable } from "svelte/store"
 import { address, chainId } from "./web3"
 import type { Step } from '../types'
 import { ethers } from "ethers"
+import { onDestroy } from "svelte"
 
 const bigintJSON = {
   stringify: (key: string, value: any) => {
@@ -15,6 +16,7 @@ const bigintJSON = {
       const val = value as Record<string, string>
       if (val.type === 'bigint') return BigInt(val.value)
     }
+    // console.log(value)
     return value
   },
 }
@@ -29,7 +31,6 @@ export const writable = <T>(key: string, baseValue: T) => {
       defaultValue = baseValue
     }
   } catch (err) {
-    // defaultValue
     defaultValue = baseValue
   }
   const store = w<T>(defaultValue)
@@ -52,7 +53,6 @@ const defaultState = (key: string): Writable<{
 const memoryCache = new Map<string, ReturnType<typeof defaultState>>()
 
 export const scoped = derived([key], ([$key]) => {
-  console.log('loading key %o', $key)
   const cached = memoryCache.get($key) || writable($key, get(defaultState($key)))
   memoryCache.set($key, cached)
   return cached

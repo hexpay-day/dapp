@@ -9,16 +9,17 @@
   } from 'flowbite-svelte';
   import { DateInput } from 'date-picker-svelte'
   import IconAddressBook from '@tabler/icons-svelte/dist/svelte/icons/IconAddressBook.svelte'
-  import IconCirclePlus from '@tabler/icons-svelte/dist/svelte/icons/IconCirclePlus.svelte'
+  import IconPlus from '@tabler/icons-svelte/dist/svelte/icons/IconPlus.svelte'
   import * as filtersStore from '../stores/filters'
 	import _ from 'lodash';
   import { page } from '$app/stores';
-	import { elipsisAddress } from '../stores/addresses';
+  import Address from './Address.svelte';
 	import { goto } from '$app/navigation';
 	import * as web3Store from '../stores/web3';
 	import * as dayStore from '../stores/day';
 	import * as filteredStakesStore from '../stores/filtered-stakes';
 	import { ethers } from 'ethers';
+	import { IconX } from '@tabler/icons-svelte';
   $: address = web3Store.address
   $: endable = filtersStore.endable
   $: optimizable = filtersStore.optimizable
@@ -66,36 +67,35 @@
     <Toggle checked={$endable} on:change={logEndableChanged}>Only Endable</Toggle>
   </div>
   <div class="flex gap-4">
-    <DateInput
-      bind:value={$startDate}
-      on:select={() => {
-        const day = dateToDay($startDate)
-        const url = endUrl({
-          chainId: $page.data.chainId,
-          day,
-          offset: $offsetDays,
-        })
-        goto(url, {
-          keepFocus: true,
-          replaceState: true,
-          noScroll: true,
-          invalidateAll: true,
-        })
-      }}
-      max={$maxDateISO}
-      min={launchDate}
-      format="yyyy-MM-dd"
-      class="flex rounded"
-      browseWithoutSelecting
-      closeOnSelection />
-    <a href="{endUrl({
-      chainId: $page.data.chainId,
-      day: dateToDay(today()),
-      offset: $page.data.count,
-    })}">
+    <ButtonGroup>
+      <div role="group" class="flex-grow" on:keypress={() => {}} on:click|preventDefault={(e) => {}}>
+        <DateInput
+          bind:value={$startDate}
+          on:select={() => {
+            const day = dateToDay($startDate)
+            const url = endUrl({
+              chainId: $page.data.chainId,
+              day,
+              offset: $offsetDays,
+            })
+            goto(url, {
+              keepFocus: true,
+              replaceState: true,
+              noScroll: true,
+              invalidateAll: true,
+            })
+          }}
+          max={$maxDateISO}
+          min={launchDate}
+          format="yyyy-MM-dd"
+          class="flex flex-grow h-[2.625rem] ml-[-1px] start-time-filters-cal-container second-class text-center"
+          browseWithoutSelecting
+          closeOnSelection />
+      </div>
       <Button
         size="md"
         disabled={+($startDate) === +today() && +($untilDate) === +today()}
+        color=primary
         on:click={() => {
           startDate.set(today())
           offsetDays.set(defaultOffsetDays)
@@ -111,35 +111,37 @@
             invalidateAll: true,
           })
         }}>Reset</Button>
-    </a>
-    <DateInput
-      bind:value={offsetDate}
-      on:select={() => {
-        const offset = (+offsetDate - +$startDate) / DAY
-        offsetDays.set(offset)
-        const day = dateToDay($startDate)
-        const url = endUrl({
-          chainId: $page.data.chainId,
-          day,
-          offset,
-        })
-        goto(url, {
-          keepFocus: true,
-          replaceState: true,
-          noScroll: true,
-          invalidateAll: true,
-        })
-      }}
-      max={new Date(Math.min(+$maxDateISO, +$startDate + (maxOffsetDays * DAY)))}
-      min={$startDate}
-      format="yyyy-MM-dd"
-      class="flex rounded"
-      browseWithoutSelecting
-      closeOnSelection />
-    <Button
-      disabled={$address === ethers.constants.AddressZero || !!$owners.find((owner) => owner.hash === $address)}
-      on:click={() => filtersStore.addAddressToOwnerRaw($address, true)}>Show Own</Button>
-  </div>
+    <div role="group" class="flex-grow" on:keypress={() => {}} on:click|preventDefault={(e) => {}}>
+      <DateInput
+        bind:value={offsetDate}
+        on:select={() => {
+          const offset = (+offsetDate - +$startDate) / DAY
+          offsetDays.set(offset)
+          const day = dateToDay($startDate)
+          const url = endUrl({
+            chainId: $page.data.chainId,
+            day,
+            offset,
+          })
+          goto(url, {
+            keepFocus: true,
+            replaceState: true,
+            noScroll: true,
+            invalidateAll: true,
+          })
+        }}
+        max={new Date(Math.min(+$maxDateISO, +$startDate + (maxOffsetDays * DAY)))}
+        min={$startDate}
+        format="yyyy-MM-dd"
+        class="flex flex-grow h-[2.625rem] ml-[-1px] end-time-filters-cal-container second-class text-center"
+        browseWithoutSelecting
+        closeOnSelection />
+    </div>
+  </ButtonGroup>
+</div>
+<Button
+  disabled={$address === ethers.constants.AddressZero || !!$owners.find((owner) => owner.hash === ethers.utils.getAddress($address))}
+  on:click={() => filtersStore.addAddressToOwnerRaw($address, true)}>Show Own</Button>
 </div>
 <div class="grid grid-cols-2 gap-4 my-2">
   <div class="grid-child">
@@ -155,40 +157,48 @@
           placeholder="0x369..."
           bind:value={$ownerValue}
           on:keyup={(e) => filtersStore.addAddressToOwner(e.code === 'Enter')} />
-        <InputAddon>
-          <IconCirclePlus class="w-4 h-4 text-gray-500 dark:text-gray-400" /> <!-- name="circle-plus-solid" -->
-        </InputAddon>
+        <Button class="px-3 text-white" color=primary on:click={() => filtersStore.addAddressToOwner(true)}>
+          <IconPlus color="white" class="w-5 h-5 text-gray-500 dark:text-gray-400" />
+        </Button>
       </ButtonGroup>
     </div>
     <div class="space-x-2 mb-2">
       {#each $owners as owner}
       <span title="{owner.hash}">
-        <Button on:click={() => filtersStore.removeOwner(owner)} size="xs">{owner.ens || elipsisAddress(owner.hash)} &times;</Button>
+        <Button on:click={() => filtersStore.removeOwner(owner)} size="xs">
+          <Address address={owner.ens || owner.hash} ellipsis />
+          <IconX class="ml-2" size={16} />
+        </Button>
       </span>
       {/each}
     </div>
   </div>
   <div class="grid-child">
     <div class="mb-6">
-      <Label for="stake-id" class="block mb-2">Stake Id</Label>
-      <ButtonGroup class="w-full">
-        <InputAddon>
-          <IconAddressBook class="w-4 h-4 text-gray-500 dark:text-gray-400" /> <!-- name="adress-book-solid"-->
-        </InputAddon>
-        <Input
-          color={$isStakeIdValid ? 'green' : ($isStakeIdValid === false ? 'red' : 'base')}
-          id="stake-id"
-          placeholder="1234"
-          bind:value={$stakeIdValue}
-          on:keyup={(e) => filtersStore.addStakeIdToList(e.code === 'Enter')} />
-        <InputAddon>
-          <IconCirclePlus class="w-4 h-4 text-gray-500 dark:text-gray-400" /> <!-- name="circle-plus-solid"-->
-        </InputAddon>
-      </ButtonGroup>
+      <Label for="stake-id" class="flex flex-col">
+        <span class="mb-2">Stake Id</span>
+        <ButtonGroup class="w-full">
+          <InputAddon>
+            <IconAddressBook class="w-4 h-4 text-gray-500 dark:text-gray-400" /> <!-- name="adress-book-solid"-->
+          </InputAddon>
+          <Input
+            color={$isStakeIdValid ? 'green' : ($isStakeIdValid === false ? 'red' : 'base')}
+            id="stake-id"
+            placeholder="1234"
+            bind:value={$stakeIdValue}
+            on:keyup={(e) => filtersStore.addStakeIdToList(e.code === 'Enter')} />
+          <Button class="px-3 text-white" color=primary on:click={() => filtersStore.addStakeIdToList(true)}>
+            <IconPlus color="white" class="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          </Button>
+        </ButtonGroup>
+      </Label>
     </div>
     <div class="space-x-2 mb-2">
       {#each $stakeIds as stakeId}
-      <Button on:click={() => filtersStore.removeStakeId(stakeId)} size="xs">{stakeId} &times;</Button>
+      <Button on:click={() => filtersStore.removeStakeId(stakeId)} size="xs">
+        {stakeId}
+        <IconX class="ml-2" size={16} />
+      </Button>
       {/each}
     </div>
   </div>

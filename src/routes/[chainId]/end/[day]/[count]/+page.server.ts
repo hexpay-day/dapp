@@ -48,7 +48,6 @@ export const load = async ({ params }: types.StakesLoadParams): Promise<types.St
     }
   }
   const endDay = day + count
-  const hedronClient = graphql.getHedronByChainId(chainId)
   let all: types.StakesEndingOnDay[] = []
   do {
     const allInDay = await cache.fetch(`${chainId}-${day}`) as types.StakesEndingOnDay[]
@@ -56,9 +55,14 @@ export const load = async ({ params }: types.StakesLoadParams): Promise<types.St
     all = all.concat(allInDay)
   } while (day <= endDay);
   const stakeIds = all.map(({ stakeId }) => +stakeId)
-  const { hexstakes } = await hedronClient.request<types.HsiStatusResponse>(graphql.queries.STAKE_HSI_STATUS, {
-    stakeIds,
-  })
+  const hedronClient = graphql.hedronClients.get(chainId)
+  let hexstakes: types.HsiStatusResponse["hexstakes"] = []
+  if (hedronClient) {
+    const { hexstakes: hedronHexStakes } = await hedronClient.request<types.HsiStatusResponse>(graphql.queries.STAKE_HSI_STATUS, {
+      stakeIds,
+    })
+    hexstakes = hedronHexStakes
+  }
   const hedronMapping = new Map<number, string>(hexstakes.map(({ stakeId, hdrnHsiAddress }) => [+stakeId, hdrnHsiAddress]))
   const hsiOwnerMapping = new Map<number, string>(hexstakes.map(({ stakeId, owner }) => [+stakeId, owner.id.toLowerCase()]))
   const stakes = all.map((stake) => {

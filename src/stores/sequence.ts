@@ -4,7 +4,7 @@ import type { ethers } from "ethers";
 import { derived, get } from "svelte/store";
 import { scoped, setScoped } from './local'
 import { writable } from 'svelte/store'
-import { balance } from "./hex";
+import { hexData } from "./hex";
 import { address, chainId, signer } from "./web3";
 import type { Step, Tasks } from "../types";
 import { TaskType, FundingOrigin } from '../types'
@@ -38,9 +38,9 @@ type TaskGroup = {
   invalid: boolean;
 }
 
-export const ordered = derived([items, balance], ([$items, $balance]) => {
+export const ordered = derived([items, hexData], ([$items, $hexData]) => {
   const $ordered: TaskGroup[] = []
-  let $bal = $balance
+  let $bal = $hexData.balance
   let group!: TaskGroup
   for (const task of $items) {
     if (task.type === TaskType.start) {
@@ -75,11 +75,12 @@ export const executeList = async ($group: TaskGroup) => {
   if (invalid) {
     return null
   }
-  const s = get(signer)
-  if (!s) {
+  const $signer = get(signer)
+  const $chainId = get(chainId)
+  if (!$signer || !$chainId) {
     throw new Error('not connected to wallet')
   }
-  const contracts = all(get(chainId), s)
+  const contracts = all($chainId, $signer)
   if (items.length === 1 && useOptimizedPath(items[0])) {
     // do not wrap in a multicall - call direct
     const [item] = items
@@ -117,6 +118,10 @@ const getCalldataFromStartTask = async (stakeManager: StakeManager, step: Step) 
     settings,
   } = step.task
   const encodedSettings = await stakeManager.encodeSettings(settings)
+    .catch((err) => {
+      console.log(err)
+      throw err
+    })
   if (fundingOrigin === FundingOrigin.connected) {
     return stakeManager.interface.encodeFunctionData('stakeStartFromBalanceFor', [
       recipient as string,

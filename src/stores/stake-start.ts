@@ -4,7 +4,7 @@ import dayjs from "dayjs"
 import { ethers } from "ethers"
 import { derived, get, writable, type Writable } from "svelte/store"
 import { address } from "./web3"
-import { DAY, startDateISO, minDateISO, timezoneOffset, useISO, updateIfChanged } from "./day"
+import { DAY, startDateISO, minDateISO, timezoneOffset, useISO } from "./day"
 import _ from 'lodash';
 
 export const account = writable(get(address))
@@ -30,16 +30,11 @@ export const endDateISO = derived([endDateLocal], ([$endDateLocal]) => {
 export const lockedDays = derived([endDateISO, startDateISO], ([$endDateISO, $startDateISO]) => {
   return `${dayjs($endDateISO).diff($startDateISO, 'day')}`
 })
-export const dateInputValue = writable(get(useISO) ? get(endDateISO) : get(endDateLocal))
-useISO.subscribe(($useISO) => {
-  updateIfChanged(dateInputValue, $useISO ? get(endDateISO) : get(endDateLocal))
+// export const dateInputValue = writable(get(useISO) ? get(endDateISO) : get(endDateLocal))
+export const dateInputValue = derived([useISO, endDateISO, endDateLocal], ([$useISO, $endDateISO, $endDateLocal]) => {
+  return $useISO ? $endDateISO : $endDateLocal
 })
-endDateISO.subscribe(($endDateISO) => {
-  updateIfChanged(dateInputValue, get(useISO) ? $endDateISO : get(endDateLocal))
-})
-endDateLocal.subscribe(($endDateLocal) => {
-  updateIfChanged(dateInputValue, get(useISO) ? get(endDateISO) : $endDateLocal)
-})
+
 const validAmount = (amount: string) => {
   try {
     if (!amount) {

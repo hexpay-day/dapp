@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { IconLogout } from '@tabler/icons-svelte';
-	import { elipsisAddress } from '../stores/addresses';
+  import Address from './Address.svelte'
   import {
     chainId,
     connected,
@@ -12,17 +12,17 @@
   } from '../stores/web3'
 	import { Button, ButtonGroup } from 'flowbite-svelte';
   const connect = async () => {
-    await facilitateConnect()
+    await facilitateConnect($page.data.chainId)
   }
   const disconnect = async () => {
     await facilitateDisconnect()
   }
-  $: trulyConnected = $connected && $page.data.chainId === $chainId
+  // $: trulyConnected = $connected && $page.data.chainId === $chainId
 </script>
 
-{#if trulyConnected}
+{#if $connected}
 <ButtonGroup>
-  <Button class="h-[42px]">{elipsisAddress($address)}</Button>
+  <Button class="h-[42px]"><Address address={$address} ellipsis /></Button>
   <Button on:click={disconnect} color="primary" class="px-3">
     <IconLogout size={20} />
   </Button>

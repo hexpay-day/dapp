@@ -29,7 +29,8 @@
     DAY,
   } from '../../../stores/day';
 	import { ethers } from 'ethers';
-	import { elipsisAddress } from '../../../stores/addresses';
+	// import { ellipsisAddress } from '../../../stores/addresses';
+  import Address from '../../../components/Address.svelte'
 	import { address } from '../../../stores/web3';
 </script>
 
@@ -60,7 +61,7 @@ nothing to check out
             <ButtonGroup divClass="flex flex-row h-[42px]">
               <Button class="flex">
                 {#if item.task.fundingOrigin === FundingOrigin.connected}
-                <IconWallet class="mr-2" />{elipsisAddress($address, 4)}
+                <IconWallet class="mr-2" /><Address address={$address} ellipsis size=sm />
                 {:else}<IconFileCode /><IconFingerprint class="ml-2" />
                 {/if}
               </Button>
@@ -79,7 +80,10 @@ nothing to check out
                 {(item.task.amount ? ethers.utils.formatUnits(item.task.amount, 8) : '0.0')}
                 <IconFlame />
               </Button>
-              <Button class="flex">{elipsisAddress(item.task.for, 4)}<IconFingerprint class="ml-2" /></Button>
+              <Button class="flex">
+                <Address address={item.task.for} ellipsis size=sm />
+                <IconFingerprint class="ml-2" />
+              </Button>
             </ButtonGroup>
           </div>
           <div class="flex flex-row justify-between">

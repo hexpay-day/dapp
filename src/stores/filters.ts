@@ -1,5 +1,5 @@
 import { get, writable } from "svelte/store";
-import { provider } from "./web3";
+import { provider, publicProvider } from "./web3";
 import { ethers } from "ethers";
 import _ from "lodash";
 
@@ -27,7 +27,7 @@ export const addAddressToOwner = async (submission: boolean) => {
 }
 export const addAddressToOwnerRaw = async (_hash: string, submission: boolean) => {
   let hash = _hash
-  const p = provider()
+  const p = get(publicProvider)
   if (!p) return
   let ens
   // let isValid: null | boolean = null
@@ -48,12 +48,13 @@ export const addAddressToOwnerRaw = async (_hash: string, submission: boolean) =
     if (hash.endsWith('.pls') || hash.endsWith('.eth')) {
       // lookup owner address
       ens = hash
-      hash = await p.resolveName(hash).catch(() => hash) || hash
+      hash = await p.resolveName(ens).catch(() => hash) || hash
       isOwnerValueValid.set(ethers.utils.isAddress(hash))
     } else {
       isOwnerValueValid.set(false)
     }
   }
+  console.log(hash, ens, ethers.utils.isAddress(hash))
   if (!get(isOwnerValueValid)) {
     return
   }

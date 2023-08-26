@@ -4,7 +4,7 @@
     Input,
   } from 'flowbite-svelte'
 	import { writable } from 'svelte/store';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onDestroy } from 'svelte';
 	import type { InputType } from 'flowbite-svelte/dist/types';
 	import _ from 'lodash';
 
@@ -28,11 +28,12 @@
   export let maxUint = ethers.constants.MaxUint256.toBigInt()
   export const value = writable<null | bigint>(null)
 	const dispatch = createEventDispatcher();
-  value.subscribe(($value) => {
+  const unsubscribe = value.subscribe(($value) => {
     dispatch('update', {
       value: $value
     })
   })
+  onDestroy(unsubscribe)
   export let text = defaultText
   const infinityCharacter = '∞'
   const validAmount = (amount: string) => {

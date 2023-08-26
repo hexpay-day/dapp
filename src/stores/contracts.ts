@@ -7,7 +7,7 @@ import * as ERC20Artifact from '@hexpayday/stake-manager/artifacts/@openzeppelin
 import * as providers from './providers'
 import type { ERC20 } from '@hexpayday/stake-manager/artifacts/types/@openzeppelin/contracts/token/ERC20'
 
-export const all = (chainId: number, signer: ethers.Signer) => {
+export const all = (chainId: number, signer: ethers.Signer | ethers.providers.BaseProvider) => {
   const provider = providers.getByChainId(chainId)
   return {
     hex: new ethers.Contract(addresses.Hex, abis.IHex.abi, signer || provider) as unknown as aTypes.IHEX,

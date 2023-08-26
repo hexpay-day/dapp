@@ -1,5 +1,8 @@
-import { derived, get, writable, type Writable } from "svelte/store";
+import { derived, get, readable, writable, type Writable } from "svelte/store";
 import * as contracts from './contracts'
+// import { onDestroy } from "svelte";
+import { signer } from "./web3";
+import * as todos from './todo'
 
 export const targetDay = writable(1)
 
@@ -11,7 +14,11 @@ export const dayToIso = (day = 0n) => {
 }
 
 export const getCurrentDay = async () => {
-  const mainnet = contracts.all(1)
+  const s = get(signer)
+  if (!s) {
+    return get(currentDay)
+  }
+  const mainnet = contracts.all(1, s)
   const hexCurrentDay = await mainnet.hex.currentDay()
   currentDay.update(() => hexCurrentDay.toNumber())
   return hexCurrentDay.toNumber()
@@ -52,35 +59,37 @@ export const dateTimeAsString = (target: Date) => {
   return `${date} ${hours}:${minutes}`
 }
 
-export const now = writable<Date>(new Date())
-const loop = () => {
-  now.set(new Date())
-  if (typeof window === 'undefined') return
-  requestAnimationFrame(loop)
-}
-loop()
+const n = new Date()
+export const now = readable<Date>(n, (set) => {
+  const todo = todos.addToLoop(() => {
+    set(new Date())
+  })
+  return () => todos.removeFromLoop(todo)
+})
+export const nowDate = readable<Date>(n, (set) => {
+  let current = truncatedDay(get(now))
+  const todo = todos.addToLoop(() => {
+    const $now = get(now)
+    const $nowTruncated = truncatedDay($now)
+    if ($nowTruncated.toISOString() !== current.toISOString()) {
+      set($nowTruncated)
+    }
+  })
+  return () => todos.removeFromLoop(todo)
+})
+
 const getStartDateISO = ($now: Date) => {
   return truncatedDay(new Date(+$now + DAY))
 }
-export const startDateISO = writable(getStartDateISO(get(now)))
 const getMinDateISO = ($now: Date) => {
   return new Date(+truncatedDay($now) + (DAY * 2))
-}
-export const minDateISO = writable(getMinDateISO(get(now)))
-export const updateIfChanged = (current: Writable<Date>, challenger: Date) => {
-  if (get(current).toISOString() !== challenger.toISOString()) {
-    current.set(challenger)
-  }
 }
 export const getMaxDateISO = ($now: Date) => {
   return new Date(+$now + DAY + (DAY * maxDays))
 }
-export const maxDateISO = writable(getMaxDateISO(get(now)))
-now.subscribe(($now) => {
-  updateIfChanged(startDateISO, getStartDateISO($now))
-  updateIfChanged(minDateISO, getMinDateISO($now))
-  updateIfChanged(maxDateISO, getMaxDateISO($now))
-})
+export const startDateISO = derived([nowDate], ([$nowDate]) => getStartDateISO($nowDate))
+export const minDateISO = derived([nowDate], ([$nowDate]) => getMinDateISO($nowDate))
+export const maxDateISO = derived([nowDate], ([$nowDate]) => getMaxDateISO($nowDate))
 export const startDateLocal = derived([startDateISO], ([$startDateISO]) => {
   return new Date(+$startDateISO - timezoneOffset($startDateISO))
 })

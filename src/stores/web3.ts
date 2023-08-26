@@ -1,30 +1,18 @@
-import { get, writable } from 'svelte/store'
+import { derived, get, readable, writable } from 'svelte/store'
+import { writable as conditionalWritable } from './conditional'
+import { readable as readablePromise } from './promise-store'
 import * as ethers from 'ethers'
 import type { SwitchChainError } from 'viem'
 import { mainnet, pulsechain, pulsechainV4 } from '@wagmi/chains'
 import type { Chain } from '@wagmi/core'
-import { fetchData } from './hex'
+import _ from 'lodash'
+import * as todos from './todo'
+import { goto } from '$app/navigation'
+import { page } from '$app/stores'
+// import { fetchData } from './hex'
 
-export const connectable = writable(false)
-export const connected = writable(false)
-export const chainId = writable<number>(0)
-export const address = writable<string>(ethers.constants.AddressZero)
-export const signer = writable<ethers.providers.JsonRpcSigner | null>(null)
-export const currentBlock = writable<ethers.providers.Block | null>(null)
-
-const id = setInterval(() => {
-  if (typeof window === 'undefined') return
-  connectable.set(!!window.ethereum)
-  clearInterval(id)
-}, 1_000)
-
-export const setChainIdIfNot = (cId: number) => {
-  if (get(chainId) || !chains.has(cId)) {
-    return
-  }
-  chainId.set(cId)
-}
-
+// export const connected = writable(false)
+// export const address = writable<string>(ethers.constants.AddressZero)
 export const chains = new Map<number, Chain>([
   [1, mainnet],
   [369, pulsechain],
@@ -37,34 +25,149 @@ export const rpcs = new Map<number, string>([
   [943, 'https://rpc.v4.testnet.pulsechain.com'],
 ])
 
-export const provider = () => {
-  if (!get(connectable)) {
-    return
+export const windowIsAvailable = readable(typeof window !== 'undefined')
+export const intendsToConnect = writable(false)
+export const chainId = writable(0)
+// chainId.subscribe(($chainId) => {
+//   console.log('chain id update', $chainId)
+// })
+
+export const replaceUrl = ($chainId: number, path: string) => {
+  const [empty, cId, ...remaining] = path.split('/')
+  if (!cId || !(+cId) || !remaining.length) {
+    // not sure how to handle
+    return `/${$chainId}/`
   }
-  return new ethers.providers.Web3Provider(window.ethereum)
+  const url = `${[empty, $chainId, ...remaining].join('/')}`
+  return url
 }
+let setProvider: () => void
+const underlyingProvider = readable<null | ethers.providers.ExternalProvider>(null, (set) => {
+  if (!get(windowIsAvailable)) {
+    return () => {}
+  }
+  let underlying!: ethers.providers.ExternalProvider
+  let rem!: () => void
+  const providerNetworkSwitched = async (cId: string) => {
+    const $chainId = parseInt(cId)
+    const url = replaceUrl($chainId, get(page).url.pathname)
+    chainId.set($chainId)
+    await goto(url, {
+      keepFocus: true,
+      replaceState: true,
+      noScroll: true,
+      invalidateAll: true,
+    })
+  }
+  const teardown = () => {
+    if (!underlying) return
+    try {
+      // @ts-ignore
+      underlying.removeListener('chainChanged', providerNetworkSwitched)
+      rem?.()
+    } catch (err) {}
+  }
+  const setup = () => {
+    try {
+      // @ts-ignore
+      underlying.addListener('chainChanged', providerNetworkSwitched)
+      intendsToConnect.set((underlying as any).isConnected())
+    } catch (err) {}
+  }
+  setProvider = () => {
+    if (underlying) {
+      teardown()
+    }
+    underlying = window.ethereum
+    if (underlying) {
+      // console.log('updating provider', +(underlying as any).networkVersion)
+      setup()
+    }
+    set(underlying)
+  }
+  // const checkAndClear = () => checkForProvider() && clearInterval(id)
+  const id = setInterval(() => {
+    setProvider()
+    if (underlying) {
+      clearInterval(id)
+    }
+  }, 1_000)
+  intendsToConnect.subscribe(setProvider)
+  return () => {
+    clearInterval(id)
+  }
+})
+export const connectable = derived([underlyingProvider], ([$underlyingProvider]) => !!$underlyingProvider)
+const mmChainId = ($underlyingProvider: null | ethers.providers.ExternalProvider) => {
+  return +($underlyingProvider as any)?.networkVersion
+}
+export const provider = derived([underlyingProvider, chainId], ([$underlyingProvider, $chainId]) => {
+  if (!$underlyingProvider || !$chainId) return null
+  return new ethers.providers.Web3Provider($underlyingProvider)
+})
+export const publicProvider = derived([chainId], ([$chainId]) => {
+  if (!$chainId || !rpcs.has($chainId)) return null
+  return new ethers.providers.JsonRpcProvider(rpcs.get($chainId) as string, $chainId)
+})
+export const signer = derived([provider], ([$provider]) => {
+  if (!$provider) return null
+  return $provider.getSigner()
+})
+export const address = readablePromise<string>(ethers.constants.AddressZero, derived([provider, chainId], async ([$provider, $chainId]) => {
+  if (!$provider || !$chainId) {
+    return ethers.constants.AddressZero
+  }
+  const accounts = await $provider.send("eth_requestAccounts", [])
+  const account = accounts.length && accounts[0]
+  return _.isString(account) ? account : ethers.constants.AddressZero
+}))
+export const connected = derived(
+  [intendsToConnect, chainId, address],
+  ([$intendsToConnect, $chainId, $address]) => {
+    // console.log($intendsToConnect, $chainId, $address)
+    return $intendsToConnect && $chainId as number > 0 && $address !== ethers.constants.AddressZero
+  },
+)
+
+// export const currentBlock = conditionalWritable(null)
+export const currentBlock = readable<null | ethers.providers.Block>(null, (set) => {
+  let id: any
+  const retrieve = async ($prov: null | ethers.providers.JsonRpcProvider) => {
+    if (!$prov) return
+    const loop = async () => {
+      const block = await $prov.getBlock('latest')
+      set(block)
+      id = setTimeout(loop, 5_000)
+    }
+    loop()
+  }
+  const unsub = publicProvider.subscribe(retrieve)
+  return () => {
+    unsub()
+    clearTimeout(id)
+  }
+})
 
 export const secondsToIso = (timestamp = 0) => {
   return new Date((timestamp || 0) * 1_000).toISOString().split('.000').join('')
 }
 
 export const changeNetworks = async (requestedChainId: number) => {
-  const p = provider()
+  const p = get(provider)
   if (!p) return
   const target = chains.get(requestedChainId) as Chain
-  const chainId = `0x${requestedChainId.toString(16)}`
+  const reqCIdAsHex = `0x${requestedChainId.toString(16)}`
   try {
     await p.send('wallet_switchEthereumChain', [{
-      chainId,
+      chainId: reqCIdAsHex,
     }])
   } catch (err) {
     const switchError = err as SwitchChainError
     if (switchError.code === 4902) {
       try {
-        console.log(target)
         await p.send('wallet_addEthereumChain', [
           {
-            chainId,
+            chainId: reqCIdAsHex,
             chainName: target.name,
             nativeCurrency: target.nativeCurrency,
             blockExplorerUrls: [
@@ -83,59 +186,29 @@ export const changeNetworks = async (requestedChainId: number) => {
       }
     }
   }
-  await facilitateConnect()
+  // chainId.set(requestedChainId)
+  const $provider = get(provider)
+  // quick test to ensure underlying matches
+  await $provider?.getNetwork()
+    .catch(() => {
+      // underlying network does not match
+      // setProvider()
+    })
+    .then(() => {
+      setProvider()
+    })
 }
 
-const startPolling = (fn: () => any, ms = 3_000) => {
-  let id = 0
-  return async () => {
-    ++id
-    const i = id
-    const runner = async () => {
-      if (i !== id) {
-        return
-      }
-      const cancel = await fn()
-      if (!cancel) {
-        setTimeout(runner, ms)
-      }
-    }
-    await runner()
+export const facilitateConnect = async (requestedChainId: number) => {
+  intendsToConnect.set(true)
+  const $chainId = get(chainId)
+  if ($chainId !== requestedChainId || requestedChainId !== mmChainId(get(underlyingProvider))) {
+    await changeNetworks(requestedChainId).catch(() => {})
   }
-}
-
-const updateNetworkInfo = async () => {
-  const s = get(signer)
-  const block = await s?.provider.getBlock('latest')
-  if (!block) {
-    return true
-  }
-  currentBlock.set(block)
-}
-
-const fetchNetworkInfo = startPolling(updateNetworkInfo)
-
-export const facilitateConnect = async () => {
-  const p = provider()
-  if (!p) return
-  await p.send("eth_requestAccounts", [])
-  const s = p.getSigner()
-  const addr = await s.getAddress()
-  const chId = await s.getChainId()
-  signer.set(s)
-  address.set(addr)
-  connected.set(true)
-  chainId.set(chId)
-  await Promise.all([
-    fetchNetworkInfo(),
-    fetchData(chId, addr),
-  ])
 }
 
 export const facilitateDisconnect = async () => {
-  address.set(ethers.constants.AddressZero)
-  signer.set(null)
-  connected.set(false)
+  intendsToConnect.set(false)
 }
 export const intWithCommas = (x: bigint | number, delimiter = '_') => {
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, delimiter);

@@ -42,7 +42,7 @@
     if (!s) {
       return
     }
-    const c = contracts.all($chainId)
+    const c = contracts.all($chainId, s)
     const balanceBig = await c.hex.connect(s).balanceOf($address)
     const balance = balanceBig.toBigInt()
     const settings = settingsStore.formSettings()

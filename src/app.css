@@ -30,3 +30,20 @@ html, body {
   text-align: center;
   padding: 0.25rem;
 }
+
+.start-time-filters-cal-container.second-class input {
+  --date-input-width: 140px;
+  border-radius: 0;
+  border-top-left-radius: 0.5rem;
+  border-bottom-left-radius: 0.5rem;
+  text-align: center;
+  padding: 0.25rem;
+}
+.end-time-filters-cal-container.second-class input {
+  --date-input-width: 140px;
+  border-radius: 0;
+  border-top-right-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  text-align: center;
+  padding: 0.25rem;
+}

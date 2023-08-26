@@ -71,6 +71,7 @@
     startStakeFromUnattributed,
   } = stakeStartStore
   $: fetchData($chainId, $address)
+  $: dateInputBoundValue = $dateInputValue
   const id = _.uniqueId()
   const resetInputs = () => {
     amount.set('')
@@ -170,18 +171,18 @@
             <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
             <div role="group" class="flex-grow" on:keypress={() => {}} on:click|preventDefault={(e) => {}}>
               <DateInput
-                bind:value={$dateInputValue}
+                bind:value={dateInputBoundValue}
                 format={`yyyy-MM-dd HH:mm ${$timezoneLabel}`}
                 class="flex flex-grow h-[2.625rem] ml-[-1px] stake-start-cal-container second-class text-center"
                 browseWithoutSelecting
                 closeOnSelection
                 min={$useISO ? $minDateLocal : $minDateISO}
                 max={$maxDateISO}
-                on:select={() => {
-                  const timezoneOffsetDelta = timezoneOffset($endDateLocal) - timezoneOffset($dateInputValue)
+                on:select={(e) => {
+                  const timezoneOffsetDelta = timezoneOffset($endDateLocal) - timezoneOffset(dateInputBoundValue)
                   endDateLocal.set($useISO
-                    ? new Date(+$dateInputValue + timezoneOffset($dateInputValue))
-                    : new Date(+$dateInputValue + timezoneOffsetDelta))
+                    ? new Date(+dateInputBoundValue + timezoneOffset(dateInputBoundValue))
+                    : new Date(+dateInputBoundValue + timezoneOffsetDelta))
                 }} />
               </div>
           </Label>
