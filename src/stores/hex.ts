@@ -56,6 +56,7 @@ export const hexData = readable<HexData>({
   return () => {
     cIdSub()
     addSub()
+    clearTimeout(id)
   }
 })
 
