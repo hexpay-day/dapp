@@ -3,20 +3,24 @@ import { derived, get, writable as w, type Writable } from "svelte/store"
 import { address, chainId } from "./web3"
 import type { Step } from '../types'
 import { ethers } from "ethers"
-import { onDestroy } from "svelte"
 
 const bigintJSON = {
   stringify: (key: string, value: any) => {
     return typeof value === 'bigint'
-      ? { type: 'bigint', value: value.toString() }
+      ? `${value.toString()}n`
       : value
   },
   parse: (key: string, value: any) => {
-    if (value && _.isObject(value)) {
-      const val = value as Record<string, string>
-      if (val.type === 'bigint') return BigInt(val.value)
+    if (value && _.isString(value)) {
+      if (value.slice(-1) !== 'n') {
+        return value
+      }
+      const matches = value.match(/\d+n/igmu)
+      if (!matches || matches.length !== 1) {
+        return value
+      }
+      return BigInt(value.slice(0, value.length - 1))
     }
-    // console.log(value)
     return value
   },
 }
@@ -26,7 +30,7 @@ export const writable = <T>(key: string, baseValue: T) => {
   let localValue = localStorage.getItem(key)
   let defaultValue!: T
   try {
-    defaultValue = JSON.parse(localValue as string)
+    defaultValue = JSON.parse(localValue as string, bigintJSON.parse)
     if (defaultValue === null) {
       defaultValue = baseValue
     }

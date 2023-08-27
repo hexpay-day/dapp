@@ -1,4 +1,5 @@
 import type { StakeManager } from "@hexpayday/stake-manager/artifacts/types";
+import * as addresses from './addresses'
 import { all } from './contracts'
 import type { ethers } from "ethers";
 import { derived, get } from "svelte/store";
@@ -6,7 +7,7 @@ import { scoped, setScoped } from './local'
 import { writable } from 'svelte/store'
 import { hexData } from "./hex";
 import { address, chainId, signer } from "./web3";
-import type { Step, Tasks } from "../types";
+import type { ApprovalStep, StakeStartStep, Step, Tasks } from "../types";
 import { TaskType, FundingOrigin } from '../types'
 
 export const addToSequence = (type: TaskType, task: Tasks) => {
@@ -39,8 +40,9 @@ type TaskGroup = {
 }
 
 export const ordered = derived([items, hexData], ([$items, $hexData]) => {
-  const $ordered: TaskGroup[] = []
+  let $ordered: TaskGroup[] = []
   let $bal = $hexData.balance
+  const allowance = $hexData.allowance
   let group!: TaskGroup
   for (const task of $items) {
     if (task.type === TaskType.start) {
@@ -67,8 +69,29 @@ export const ordered = derived([items, hexData], ([$items, $hexData]) => {
     }
     group.items.push(task)
   }
+  const consumed = $hexData.balance - $bal
+  if (consumed > allowance) {
+    $ordered = ([{
+      name: 'Approval',
+      invalid: false,
+      items: [approvalStep(allowance, consumed)],
+    }] as TaskGroup[]).concat($ordered)
+  }
   return $ordered
 })
+
+const approvalStep = (allowance: bigint, consumed: bigint): Step => {
+  return {
+    type: TaskType.approval,
+    task: {
+      allowance,
+      consumed,
+      balance: get(hexData).balance,
+      minimum: consumed - allowance,
+      contract: addresses.StakeManager,
+    },
+  }
+}
 
 export const executeList = async ($group: TaskGroup) => {
   const { items, invalid } = $group
@@ -89,6 +112,13 @@ export const executeList = async ($group: TaskGroup) => {
         item.task.amount as ethers.BigNumberish,
         item.task.lockedDays,
       )
+    } else if (item.type === TaskType.approval) {
+      console.log('approval initiating')
+      const task = item.task as ApprovalStep
+      return contracts.hex.approve(
+        task.contract,
+        task.consumed - task.allowance
+      )
     }
   }
   const stepsCalldata = items.map((step) => getCalldataFromTask(contracts.stakeManager, step))
@@ -107,16 +137,19 @@ const useOptimizedPath = (step: Step) => {
       useAdvancedSettings,
     } = step.task
     return recipient === get(address) && fundingOrigin || !useAdvancedSettings
+  } else if (step.type === TaskType.approval) {
+    return true
   }
   return false
 }
 
 const getCalldataFromStartTask = async (stakeManager: StakeManager, step: Step) => {
+  const task = step.task as StakeStartStep
   const {
     for: recipient,
     fundingOrigin,
     settings,
-  } = step.task
+  } = task
   const encodedSettings = await stakeManager.encodeSettings(settings)
     .catch((err) => {
       console.log(err)
@@ -125,22 +158,22 @@ const getCalldataFromStartTask = async (stakeManager: StakeManager, step: Step) 
   if (fundingOrigin === FundingOrigin.connected) {
     return stakeManager.interface.encodeFunctionData('stakeStartFromBalanceFor', [
       recipient as string,
-      step.task.amount as ethers.BigNumberish,
-      step.task.lockedDays,
+      task.amount as ethers.BigNumberish,
+      task.lockedDays,
       encodedSettings,
     ])
   } else if (fundingOrigin === FundingOrigin.deposited) {
     return stakeManager.interface.encodeFunctionData('stakeStartFromWithdrawableFor', [
       recipient as string,
-      step.task.amount as ethers.BigNumberish,
-      step.task.lockedDays,
+      task.amount as ethers.BigNumberish,
+      task.lockedDays,
       encodedSettings,
     ])
   } else if (fundingOrigin === FundingOrigin.unattributed) {
     return stakeManager.interface.encodeFunctionData('stakeStartFromUnattributedFor', [
       recipient as string,
-      step.task.amount as ethers.BigNumberish,
-      step.task.lockedDays,
+      task.amount as ethers.BigNumberish,
+      task.lockedDays,
       encodedSettings,
     ])
   }

@@ -14,12 +14,12 @@
     IconFileCode,
     IconChevronRight,
     IconClock,
-    IconOutbound,
-    IconChevronsRight,
     IconX,
     IconFingerprint,
   } from '@tabler/icons-svelte'
   import HexIcon from '../../../components/icons/Hex.svelte'
+  import TimelineIcon from '../../../components/icons/Timeline.svelte'
+  import ApprovalReadout from '../../../components/ApprovalReadout.svelte'
 	import {
     startDateISO,
     startDateLocal,
@@ -31,6 +31,8 @@
 	import { ethers } from 'ethers';
   import Address from '../../../components/Address.svelte'
 	import { address, numberWithCommas } from '../../../stores/web3';
+
+  let targeted = 0
 </script>
 
 <div class="flex flex-col m-auto relative">
@@ -38,22 +40,24 @@
 nothing to check out
 {:else}
 <Timeline order="vertical" class="sequence-timeline ml-3">
-  {#each $ordered as group}
+  {#each $ordered as group, index}
   <li class="ml-6 mb-4">
-    <span class="flex absolute -left-3 justify-center items-center w-6 h-6 bg-primary-200 rounded-full ring-8 ring-white dark:ring-gray-900 dark:bg-primary-900">
-      <!-- <IconChevronRight class="w-4 h-4 text-primary-600 dark:text-primary-400" /> -->
-      <IconOutbound class="w-4 h-4 text-primary-600 dark:text-primary-400" />
-    </span>
+    <TimelineIcon type=outbound />
     <h3 class="flex items-center mb-1 text-xl font-semibold text-gray-900 dark:text-white">{group.name}</h3>
   </li>
   <Timeline order="vertical" class="sequence-timeline ml-7">
     {#each group.items as item}
-      {#if item.type === TaskType.start}
+      {#if item.type === TaskType.approval}
+      <TimelineItem title="Approval">
+        <svelte:fragment slot="icon">
+          <TimelineIcon type="thumbup" />
+        </svelte:fragment>
+        <ApprovalReadout max={item.task.balance} amount={item.task.minimum} decimals={8} />
+      </TimelineItem>
+      {:else if item.type === TaskType.start}
       <TimelineItem title="Start Stake">
         <svelte:fragment slot="icon">
-          <span class="flex absolute -left-3 justify-center items-center w-6 h-6 bg-primary-200 rounded-full ring-8 ring-white dark:ring-gray-900 dark:bg-primary-900">
-            <IconFlame class="w-4 h-4 text-primary-600 dark:text-primary-400" />
-          </span>
+          <TimelineIcon type="flame" />
         </svelte:fragment>
         <div class="flex flex-col space-y-2">
           <div class="flex">
@@ -101,7 +105,7 @@ nothing to check out
   </Timeline>
   <div class="flex justify-end">
     {#if !group.invalid}
-    <Button on:click={() => {
+    <Button disabled={index !== targeted} on:click={() => {
       executeList(group)
     }}>Execute Tasks</Button>
     {/if}
@@ -109,9 +113,7 @@ nothing to check out
   {/each}
   <li class="ml-6">
     <div class="flex absolute -left-3 justify-center items-center w-6 h-6 bg-primary-200 rounded-full ring-8 ring-white dark:ring-gray-900 dark:bg-primary-900"></div>
-    <span class="flex absolute -left-3 justify-center items-center w-6 h-6 bg-primary-200 rounded-full ring-8 ring-white dark:ring-gray-900 dark:bg-primary-900">
-      <IconChevronsRight class="w-4 h-4 text-primary-600 dark:text-primary-400" />
-    </span>
+    <TimelineIcon type="chevronsright" />
     <h3 class="flex items-center mb-1 text-xl font-semibold text-gray-900 dark:text-white">Finish</h3>
   </li>
 </Timeline>

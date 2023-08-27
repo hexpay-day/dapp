@@ -90,25 +90,22 @@
     ),
     settings: {
       tipMethod: $hexTipSelection.method,
-      tipMagnitude: '0x'+(
-        $hexTipSelection.method === 0n ? 0n
+      tipMagnitude: $hexTipSelection.method === 0n ? 0n
         : (
           $hexTipSelection.method === 1n
             ? $hexTipSelection.numerator
             : ($hexTipSelection.numerator << 32n) | $hexTipSelection.denominator
-        )
-      ).toString(16),
+        ),
       hedronTipMethod: $hedronTipSelection.method,
-      hedronTipMagnitude: '0x'+(
-        $hedronTipSelection.method === 0n ? 0n
+      hedronTipMagnitude: $hedronTipSelection.method === 0n
+        ? 0n
         : (
           $hedronTipSelection.method === 1n
             ? $hedronTipSelection.numerator
             : ($hedronTipSelection.numerator << 32n) | $hedronTipSelection.denominator
-        )
-      ).toString(16),
+        ),
       newStakeDaysMethod: $newStakeDaysSelection.method,
-      newStakeDaysMagnitude: '0x'+($newStakeDaysSelection.method === 0n
+      newStakeDaysMagnitude: $newStakeDaysSelection.method === 0n
         ? 0n
         : (
           $newStakeDaysSelection.method === 2n ? 0n
@@ -117,11 +114,13 @@
               ? 1n
               : $newStakeDaysSelection.numerator
           )
-        )).toString(16),
+        ),
       newStakeMethod: $newStakeAmountSelection.method,
-      newStakeMagnitude: $newStakeAmountSelection.method === 0n ? '0x0' : '0x'+($newStakeAmountSelection.method === 1n
-        ? $newStakeAmountSelection.numerator
-        : $newStakeAmountSelection.numerator << 32n | $newStakeAmountSelection.denominator).toString(16),
+      newStakeMagnitude: $newStakeAmountSelection.method === 0n ? 0n : (
+        $newStakeAmountSelection.method === 1n
+          ? $newStakeAmountSelection.numerator
+          : $newStakeAmountSelection.numerator << 32n | $newStakeAmountSelection.denominator
+      ),
       copyIterations: $copyIterations,
       consentAbilities: {
         canStakeEnd: $othersCanEnd,

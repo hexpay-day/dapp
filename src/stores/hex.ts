@@ -10,12 +10,14 @@ export const deposited = writable(0n)
 export const isolated = writable(0n)
 
 export type HexData = {
+  allowance: bigint;
   balance: bigint;
   deposited: bigint;
   isolated: bigint;
 }
 
 export const hexData = readable<HexData>({
+  allowance: 0n,
   balance: 0n,
   deposited: 0n,
   isolated: 0n,
@@ -30,7 +32,9 @@ export const hexData = readable<HexData>({
     if (!ethers.utils.isAddress($address)) return
     if (ethers.constants.AddressZero === $address) return
     const c = contracts.all($chainId, $publicProvider)
-    const [bal, dep, iso] = await Promise.all([
+    const [allowance, bal, dep, iso] = await Promise.all([
+      c.hex.allowance($address, c.stakeManager.address)
+        .then((res) => res.toBigInt() || 0n),
       c.hex.balanceOf($address)
         .then((res) => res.toBigInt() || 0n),
       c.stakeManager.withdrawableBalanceOf(c.hex.address, $address)
@@ -39,6 +43,7 @@ export const hexData = readable<HexData>({
       ethers.BigNumber.from(0).toBigInt(),
     ])
     const result = {
+      allowance,
       balance: bal,
       deposited: dep,
       isolated: iso,

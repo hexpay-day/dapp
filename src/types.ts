@@ -103,7 +103,8 @@ export type Tip = {
 }
 
 export enum TaskType {
-  start,
+  approval = 'approval',
+  start = 'start',
 }
 
 // export type TaskType = keyof taskTypes
@@ -126,10 +127,16 @@ export type StakeStartStep = {
   useAdvancedSettings: boolean;
 }
 
-export type Tasks = StakeStartStep;
+export type ApprovalStep = {
+  allowance: bigint;
+  consumed: bigint;
+  contract: string;
+}
 
-export type Step = {
-  task: Tasks;
+export type Tasks = ApprovalStep | StakeStartStep;
+
+export type Step<T extends Tasks = any> = {
+  task: T;
   type: TaskType;
   invalid?: boolean;
 }
