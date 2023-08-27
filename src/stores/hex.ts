@@ -38,7 +38,6 @@ export const hexData = readable<HexData>({
       // isolated not yet available
       ethers.BigNumber.from(0).toBigInt(),
     ])
-    console.log(bal)
     const result = {
       balance: bal,
       deposited: dep,
