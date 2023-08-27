@@ -1,36 +1,23 @@
 import { derived, get, readable, writable } from 'svelte/store'
-import { writable as conditionalWritable } from './conditional'
 import { readable as readablePromise } from './promise-store'
 import * as ethers from 'ethers'
 import type { SwitchChainError } from 'viem'
-import { mainnet, pulsechain, pulsechainV4 } from '@wagmi/chains'
+import { mainnet, pulsechain, pulsechainV4, hardhat } from '@wagmi/chains'
 import type { Chain } from '@wagmi/core'
 import _ from 'lodash'
-import * as todos from './todo'
 import { goto } from '$app/navigation'
 import { page } from '$app/stores'
-// import { fetchData } from './hex'
 
-// export const connected = writable(false)
-// export const address = writable<string>(ethers.constants.AddressZero)
 export const chains = new Map<number, Chain>([
   [1, mainnet],
   [369, pulsechain],
   [943, pulsechainV4],
-])
-
-export const rpcs = new Map<number, string>([
-  [1, 'https://eth.llamarpc.com'],
-  [369, 'https://rpc.pulsechain.com'],
-  [943, 'https://rpc.v4.testnet.pulsechain.com'],
+  [31337, hardhat],
 ])
 
 export const windowIsAvailable = readable(typeof window !== 'undefined')
 export const intendsToConnect = writable(false)
 export const chainId = writable(0)
-// chainId.subscribe(($chainId) => {
-//   console.log('chain id update', $chainId)
-// })
 
 export const replaceUrl = ($chainId: number, path: string) => {
   const [empty, cId, ...remaining] = path.split('/')
@@ -85,7 +72,6 @@ const underlyingProvider = readable<null | ethers.providers.ExternalProvider>(nu
     }
     set(underlying)
   }
-  // const checkAndClear = () => checkForProvider() && clearInterval(id)
   const id = setInterval(() => {
     setProvider()
     if (underlying) {
@@ -106,8 +92,13 @@ export const provider = derived([underlyingProvider, chainId], ([$underlyingProv
   return new ethers.providers.Web3Provider($underlyingProvider)
 })
 export const publicProvider = derived([chainId], ([$chainId]) => {
-  if (!$chainId || !rpcs.has($chainId)) return null
-  return new ethers.providers.JsonRpcProvider(rpcs.get($chainId) as string, $chainId)
+  if ($chainId) {
+    const chain = chains.get($chainId)
+    if (chain) {
+      return new ethers.providers.JsonRpcProvider(chain.rpcUrls.public.http[0], $chainId)
+    }
+  }
+  return null
 })
 export const signer = derived([provider], ([$provider]) => {
   if (!$provider) return null
@@ -129,7 +120,6 @@ export const connected = derived(
   },
 )
 
-// export const currentBlock = conditionalWritable(null)
 export const currentBlock = readable<null | ethers.providers.Block>(null, (set) => {
   let id: any
   const retrieve = async ($prov: null | ethers.providers.JsonRpcProvider) => {
@@ -157,6 +147,7 @@ export const changeNetworks = async (requestedChainId: number) => {
   if (!p) return
   const target = chains.get(requestedChainId) as Chain
   const reqCIdAsHex = `0x${requestedChainId.toString(16)}`
+  const isHH = target.id === 31337
   try {
     await p.send('wallet_switchEthereumChain', [{
       chainId: reqCIdAsHex,
@@ -170,7 +161,7 @@ export const changeNetworks = async (requestedChainId: number) => {
             chainId: reqCIdAsHex,
             chainName: target.name,
             nativeCurrency: target.nativeCurrency,
-            blockExplorerUrls: [
+            blockExplorerUrls: isHH ? null : [
               target.blockExplorers?.default.url,
             ],
             rpcUrls: [
@@ -210,6 +201,7 @@ export const facilitateConnect = async (requestedChainId: number) => {
 export const facilitateDisconnect = async () => {
   intendsToConnect.set(false)
 }
-export const intWithCommas = (x: bigint | number, delimiter = '_') => {
-  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, delimiter);
-}
+
+const defaultDelimiter = ','
+
+export const numberWithCommas = (x: string, delimiter = defaultDelimiter) => x.replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/ugim, delimiter)

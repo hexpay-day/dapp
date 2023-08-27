@@ -32,10 +32,13 @@ export const hexData = readable<HexData>({
     const c = contracts.all($chainId, $publicProvider)
     const [bal, dep, iso] = await Promise.all([
       c.hex.balanceOf($address)
-        .then((res) => res.toBigInt() || (1_000n * (10n**8n))),
-      ethers.BigNumber.from(0).toBigInt(),
+        .then((res) => res.toBigInt() || 0n),
+      c.stakeManager.withdrawableBalanceOf(c.hex.address, $address)
+        .then((res) => res.toBigInt() || 0n),
+      // isolated not yet available
       ethers.BigNumber.from(0).toBigInt(),
     ])
+    console.log(bal)
     const result = {
       balance: bal,
       deposited: dep,

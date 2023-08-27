@@ -17,7 +17,7 @@
     IconOutbound,
     IconChevronsRight,
     IconX,
-	IconFingerprint,
+    IconFingerprint,
   } from '@tabler/icons-svelte'
   import HexIcon from '../../../components/icons/Hex.svelte'
 	import {
@@ -29,9 +29,8 @@
     DAY,
   } from '../../../stores/day';
 	import { ethers } from 'ethers';
-	// import { ellipsisAddress } from '../../../stores/addresses';
   import Address from '../../../components/Address.svelte'
-	import { address } from '../../../stores/web3';
+	import { address, numberWithCommas } from '../../../stores/web3';
 </script>
 
 <div class="flex flex-col m-auto relative">
@@ -68,17 +67,15 @@ nothing to check out
               {#if item.task.fundingOrigin === FundingOrigin.connected}
               <Button class="flex">
                 <HexIcon class="mr-2" size={24} />
-                {(item.task.amount ? ethers.utils.formatUnits(item.task.amount, 8) : '0.0')}
-              </Button>
-              <Button class="flex" title="{item.task.contract}">
-                <IconChevronRight class="w-4 h-4 mr-2" />
+                {numberWithCommas(item.task.amount ? ethers.utils.formatUnits(item.task.amount, 8) : '0.0')}
+                <IconChevronRight class="w-4 h-4 mx-2" />
                 <IconFileCode />
               </Button>
               {/if}
               <Button class="flex">
                 <HexIcon class="mr-2" size={24} />
-                {(item.task.amount ? ethers.utils.formatUnits(item.task.amount, 8) : '0.0')}
-                <IconFlame />
+                {numberWithCommas(item.task.amount ? ethers.utils.formatUnits(item.task.amount, 8) : '0.0')}
+                <IconFlame class="ml-2" />
               </Button>
               <Button class="flex">
                 <Address address={item.task.for} ellipsis size=sm />

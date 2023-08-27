@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { ethers } from "ethers";
-  import { balance, fetchData } from "../../../stores/hex";
-  import { chainId, address, connected, intWithCommas } from '../../../stores/web3'
+  import { hexData, fetchData } from "../../../stores/hex";
+  import * as addresses from '../../../stores/addresses'
+  import { chainId, address, connected, numberWithCommas } from '../../../stores/web3'
   import {
     Label,
     Input,
@@ -28,7 +29,6 @@
 	import type { EncodableSettings } from "@hexpayday/stake-manager/artifacts/types";
 	import { addToSequence } from "../../../stores/sequence";
   import { FundingOrigin, TaskType } from '../../../types'
-	import { stakeManagerByChainId } from "../../../stores/addresses";
   const {
     useISO,
     timezoneLabel,
@@ -78,7 +78,8 @@
     stakeStartStore.resetEndDay()
   }
   $: settings = {
-    contract: stakeManagerByChainId.get($chainId) || ethers.constants.AddressZero,
+    // can flip this to be isolated if desired
+    contract: addresses.StakeManager || ethers.constants.AddressZero,
     lockedDays: $lockedDays,
     for: $validatedAccount || ethers.constants.AddressZero,
     amount: $amountIsValid ? $amount : null,
@@ -199,10 +200,10 @@
               <Button
                 color="primary"
                 class="px-3"
-                disabled={!$amountIsValid ? $amount === null : ($amount ? BigInt($amount) >= $balance : false)}
-                on:click={() => amount.set(`${$balance}`)}>MAX</Button>
+                disabled={!$amountIsValid ? $amount === null : ($amount ? BigInt($amount) >= $hexData.balance : false)}
+                on:click={() => amount.set(`${$hexData.balance}`)}>MAX</Button>
               <DecimalInput
-                max={$balance}
+                max={$hexData.balance}
                 decimals={8}
                 on:update={(e) => amount.set(`${e.detail.value}`)}
                 text={$amountIsValid && $amount ? ethers.utils.formatUnits($amount, 8) : ''}
@@ -213,7 +214,7 @@
           </div>
         </div>
       </div>
-      <Helper class="text-sm text-right">{#if $amountIsValid && $amount}{intWithCommas(BigInt($amount))} Hearts{:else}&nbsp;{/if}</Helper>
+      <Helper class="text-sm text-right">{#if $amountIsValid && $amount}{numberWithCommas($amount)} Hearts{:else}&nbsp;{/if}</Helper>
     </div>
   </div>
   <div class="grid col-span-2 grid-cols-2 gap-4">

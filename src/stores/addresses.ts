@@ -1,13 +1,9 @@
 export const Hex = '0x2b591e99afe9f32eaa6214f7b7629768c40eeb39'
 export const Hedron = '0x3819f64f282bf135d62168c1e513280daf905e06'
 export const HSIM = '0x8BD3d1472A656e312E94fB1BbdD599B8C51D18e3'
-export const StakeManager = '0xE971e07BF9917e91DFbeD9165f2ea8e6FF876880'
-
-export const stakeManagerByChainId = new Map<number, string>([
-  [1, StakeManager],
-  [369, StakeManager],
-  [943, StakeManager],
-])
+export const ExistingStakeManager = '0x209b1C66cB0Ea99DC2d4Ad13C35859DD1c258988'
+export const StakeManager = '0x8B5fc9b2A02fB35155cE96A8Ff73d917a4fDB727'
+export const IsolatedStakeManagerFactory = '0x415012b3029147ED1Ff30022cf11dd683A647D7E'
 
 export const ellipsisAddress = (addr: string, offset = 6) => `${addr.slice(0, offset + 2)}...${addr.slice(-offset)}`
 

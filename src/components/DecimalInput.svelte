@@ -7,6 +7,7 @@
 	import { createEventDispatcher, onDestroy } from 'svelte';
 	import type { InputType } from 'flowbite-svelte/dist/types';
 	import _ from 'lodash';
+	import { numberWithCommas } from '../stores/web3';
 
   export let decimals = 8
   export let defaultText = ''
@@ -36,7 +37,8 @@
   onDestroy(unsubscribe)
   export let text = defaultText
   const infinityCharacter = '∞'
-  const validAmount = (amount: string) => {
+  const validAmount = (amountWithCommas: string) => {
+    const amount = amountWithCommas.split(',').join('')
     let amnt = amount.trim().split(infinityCharacter).join('')
     if (amnt !== amount) {
       text = amnt
@@ -97,7 +99,10 @@
   $: amountIsValid = validAmount(text)
   const keyupHandler = (e: any) => {
     const val = (e.currentTarget as unknown as HTMLInputElement).value
-    text = val
+    const proposedValue = numberWithCommas(val.split(',').join(''))
+    if (text !== proposedValue) {
+      text = proposedValue
+    }
   }
 </script>
 <Input

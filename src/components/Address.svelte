@@ -6,6 +6,4 @@
   type Sizes = 'sm' | 'md'
   export let size: Sizes = 'md'
   $: characters = size === 'md' ? 6 : (size === 'sm' ? 4 : 6)
-</script>
-
-{#await address}{''}{:then $address}{#if ellipsis}{ellipsisAddress($address, characters)}{:else}{$address}{/if}{/await}
+</script>{#await address}{''}{:then $address}{#if ellipsis}{ellipsisAddress($address, characters)}{:else}{$address}{/if}{/await}
