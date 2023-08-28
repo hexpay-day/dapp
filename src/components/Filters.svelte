@@ -59,24 +59,74 @@
   const endUrl = (params: Params) => {
     return `/${params.chainId}/end/${params.day}/${params.offset}`
   }
+  export let day = '0'
+  const submitDayUpdate = () => {
+    const url = endUrl({
+      chainId: $page.data.chainId,
+      day: +day,
+      offset: $page.data.count,
+    })
+    goto(url, {
+      keepFocus: true,
+      replaceState: true,
+      noScroll: true,
+      invalidateAll: true,
+    })
+  }
 </script>
 
-<div class="flex gap-4 my-2 lg:flex-row flex-col">
+<div class="flex gap-4 my-2 flex-col">
   <div class="flex gap-4">
     <Toggle checked={$optimizable} on:change={logOptimizableChanged}>Only Optimizable</Toggle>
     <Toggle checked={$endable} on:change={logEndableChanged}>Only Endable</Toggle>
   </div>
-  <div class="flex gap-4">
-    <ButtonGroup>
-      <div role="group" class="flex-grow" on:keypress={() => {}} on:click|preventDefault={(e) => {}}>
-        <DateInput
-          bind:value={$startDate}
-          on:select={() => {
-            const day = dateToDay($startDate)
+  <div class="flex gap-4 flex-row">
+    <div class="flex gap-4">
+      <ButtonGroup>
+        <Button class="flex-shrink-0" color=primary on:click={submitDayUpdate}>Go To Day</Button>
+        <Input class="flex-shrink text-center w-[100px]" bind:value={day} on:keypress={(e) => {
+          if (e.code === 'Enter') submitDayUpdate()
+        }} />
+        <!-- <InputAddon>Day(s)</InputAddon> -->
+      </ButtonGroup>
+    </div>
+    <div class="flex gap-4">
+      <ButtonGroup>
+        <div role="group" class="flex-grow" on:keypress={() => {}} on:click|preventDefault={(e) => {}}>
+          <DateInput
+            bind:value={$startDate}
+            on:select={() => {
+              const day = dateToDay($startDate)
+              const url = endUrl({
+                chainId: $page.data.chainId,
+                day,
+                offset: $offsetDays,
+              })
+              goto(url, {
+                keepFocus: true,
+                replaceState: true,
+                noScroll: true,
+                invalidateAll: true,
+              })
+            }}
+            max={$maxDateISO}
+            min={launchDate}
+            format="yyyy-MM-dd"
+            class="flex flex-grow h-[2.625rem] ml-[-1px] start-time-filters-cal-container second-class text-center"
+            browseWithoutSelecting
+            closeOnSelection />
+        </div>
+        <Button
+          size="md"
+          disabled={+($startDate) === +today() && +($untilDate) === +today()}
+          color=primary
+          on:click={() => {
+            startDate.set(today())
+            offsetDays.set(defaultOffsetDays)
             const url = endUrl({
               chainId: $page.data.chainId,
-              day,
-              offset: $offsetDays,
+              day: dateToDay(today()),
+              offset: defaultOffsetDays,
             })
             goto(url, {
               keepFocus: true,
@@ -84,64 +134,39 @@
               noScroll: true,
               invalidateAll: true,
             })
-          }}
-          max={$maxDateISO}
-          min={launchDate}
-          format="yyyy-MM-dd"
-          class="flex flex-grow h-[2.625rem] ml-[-1px] start-time-filters-cal-container second-class text-center"
-          browseWithoutSelecting
-          closeOnSelection />
-      </div>
-      <Button
-        size="md"
-        disabled={+($startDate) === +today() && +($untilDate) === +today()}
-        color=primary
-        on:click={() => {
-          startDate.set(today())
-          offsetDays.set(defaultOffsetDays)
-          const url = endUrl({
-            chainId: $page.data.chainId,
-            day: dateToDay(today()),
-            offset: defaultOffsetDays,
-          })
-          goto(url, {
-            keepFocus: true,
-            replaceState: true,
-            noScroll: true,
-            invalidateAll: true,
-          })
-        }}>Reset</Button>
-    <div role="group" class="flex-grow" on:keypress={() => {}} on:click|preventDefault={(e) => {}}>
-      <DateInput
-        bind:value={offsetDate}
-        on:select={() => {
-          const offset = (+offsetDate - +$startDate) / DAY
-          offsetDays.set(offset)
-          const day = dateToDay($startDate)
-          const url = endUrl({
-            chainId: $page.data.chainId,
-            day,
-            offset,
-          })
-          goto(url, {
-            keepFocus: true,
-            replaceState: true,
-            noScroll: true,
-            invalidateAll: true,
-          })
-        }}
-        max={new Date(Math.min(+$maxDateISO, +$startDate + (maxOffsetDays * DAY)))}
-        min={$startDate}
-        format="yyyy-MM-dd"
-        class="flex flex-grow h-[2.625rem] ml-[-1px] end-time-filters-cal-container second-class text-center"
-        browseWithoutSelecting
-        closeOnSelection />
+          }}>Reset</Button>
+        <div role="group" class="flex-grow" on:keypress={() => {}} on:click|preventDefault={(e) => {}}>
+          <DateInput
+            bind:value={offsetDate}
+            on:select={() => {
+              const offset = (+offsetDate - +$startDate) / DAY
+              offsetDays.set(offset)
+              const day = dateToDay($startDate)
+              const url = endUrl({
+                chainId: $page.data.chainId,
+                day,
+                offset,
+              })
+              goto(url, {
+                keepFocus: true,
+                replaceState: true,
+                noScroll: true,
+                invalidateAll: true,
+              })
+            }}
+            max={new Date(Math.min(+$maxDateISO, +$startDate + (maxOffsetDays * DAY)))}
+            min={$startDate}
+            format="yyyy-MM-dd"
+            class="flex flex-grow h-[2.625rem] ml-[-1px] end-time-filters-cal-container second-class text-center"
+            browseWithoutSelecting
+            closeOnSelection />
+        </div>
+      </ButtonGroup>
     </div>
-  </ButtonGroup>
-</div>
-<Button
-  disabled={$address === ethers.constants.AddressZero || !!$owners.find((owner) => owner.hash === ethers.utils.getAddress($address))}
-  on:click={() => filtersStore.addAddressToOwnerRaw($address, true)}>Show Own</Button>
+    <Button
+      disabled={$address === ethers.constants.AddressZero || !!$owners.find((owner) => owner.hash === ethers.utils.getAddress($address))}
+      on:click={() => filtersStore.addAddressToOwnerRaw($address, true)}>Show Own</Button>
+  </div>
 </div>
 <div class="grid grid-cols-2 gap-4 my-2">
   <div class="grid-child">

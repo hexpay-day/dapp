@@ -54,7 +54,6 @@ export const addAddressToOwnerRaw = async (_hash: string, submission: boolean) =
       isOwnerValueValid.set(false)
     }
   }
-  console.log(hash, ens, ethers.utils.isAddress(hash))
   if (!get(isOwnerValueValid)) {
     return
   }

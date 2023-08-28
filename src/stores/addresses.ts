@@ -4,6 +4,7 @@ export const HSIM = '0x8BD3d1472A656e312E94fB1BbdD599B8C51D18e3'
 export const ExistingStakeManager = '0x209b1C66cB0Ea99DC2d4Ad13C35859DD1c258988'
 export const StakeManager = '0x8B5fc9b2A02fB35155cE96A8Ff73d917a4fDB727'
 export const IsolatedStakeManagerFactory = '0x415012b3029147ED1Ff30022cf11dd683A647D7E'
+export const Multicall = '0xcA11bde05977b3631167028862bE2a173976CA11'
 
 export const ellipsisAddress = (addr: string, offset = 6) => `${addr.slice(0, offset + 2)}...${addr.slice(-offset)}`
 

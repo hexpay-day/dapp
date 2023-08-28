@@ -94,6 +94,16 @@ const approvalStep = (allowance: bigint, consumed: bigint): Step => {
 }
 
 export const executeList = async ($group: TaskGroup) => {
+  await executeListOfTasks($group)
+    .then(async (tx) => {
+      console.log('tx sent %o', tx?.hash)
+      if (!tx) return
+      const receipt = await tx.wait()
+      console.log('tx mined %o', receipt.transactionHash)
+    })
+}
+
+export const executeListOfTasks = async ($group: TaskGroup) => {
   const { items, invalid } = $group
   if (invalid) {
     return null
@@ -113,7 +123,6 @@ export const executeList = async ($group: TaskGroup) => {
         item.task.lockedDays,
       )
     } else if (item.type === TaskType.approval) {
-      console.log('approval initiating')
       const task = item.task as ApprovalStep
       return contracts.hex.approve(
         task.contract,
@@ -122,7 +131,11 @@ export const executeList = async ($group: TaskGroup) => {
     }
   }
   const stepsCalldata = items.map((step) => getCalldataFromTask(contracts.stakeManager, step))
-  await contracts.stakeManager.multicall(stepsCalldata, false)
+  return await contracts.stakeManager.multicall(stepsCalldata, false)
+    .then((tx) => {
+      $group.items.forEach(removeFromSequence)
+      return tx
+    })
 }
 
 export const getCalldataFromTask = (stakeManager: StakeManager, step: Step) => {

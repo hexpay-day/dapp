@@ -49,6 +49,7 @@ export type StakesEndingOnDay = {
   startDay: string;
   stakedDays: string;
   stakerAddr: string;
+  owner: null | string;
   stakeEnd: {
     penalty: string;
     payout: string;

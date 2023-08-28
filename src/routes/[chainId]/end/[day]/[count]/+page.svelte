@@ -12,6 +12,6 @@
 </script>
 
 <div class="flex max-w-5xl flex-col m-auto">
-  <Filters />
+  <Filters day={$page.data.day} />
   <FilteredStakes />
 </div>
