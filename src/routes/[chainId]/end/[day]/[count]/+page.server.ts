@@ -2,7 +2,7 @@ import type * as types from '../../../../../types'
 import * as contracts from '../../../../../stores/contracts'
 import * as addresses from '../../../../../stores/addresses'
 import * as graphql from '../../../../../graphql'
-import type * as aTypes from '@hexpayday/stake-manager/artifacts/types/contracts/IHEX'
+import type * as aTypes from '@hexpayday/stake-manager/artifacts/types/contracts/interfaces/IHEX'
 import _ from 'lodash'
 import { LRUCache } from 'lru-cache'
 import { ethers } from 'ethers'
@@ -52,6 +52,87 @@ const getStakesFromChain = async (chainId: number, day: number) => {
   }))
 }
 
+const callsLimit = 10_000
+
+const loadStakesFrom = async (chainId: number, account: string) => {
+  const all = contracts.all(chainId, null)
+  const stakeCount = await all.hex.stakeCount(account)
+  const calls = _.range(0, stakeCount.toNumber()).map((index) => ({
+    target: addresses.Hex,
+    allowFailure: false,
+    value: 0,
+    callData: all.hex.interface.encodeFunctionData('stakeLists', [
+      account,
+      index,
+    ]),
+  }))
+  const stakeChunks = await Promise.all(_.chunk(calls, callsLimit).map((clls) => (
+    all.multicall.callStatic.aggregate3(clls)
+  )))
+  return _.flatten(stakeChunks).map((result) => (
+    all.hex.interface.decodeFunctionResult('stakeLists', result.returnData) as unknown as aTypes.IUnderlyingStakeable.StakeStoreStructOutput
+  ))
+}
+
+const onlyOwnedBy = (chainId: number, account: string, target: string) => async (stakes: aTypes.IUnderlyingStakeable.StakeStoreStructOutput[]) => {
+  const all = contracts.all(chainId, null)
+  const calls = stakes.map((stake) => ({
+    target,
+    allowFailure: false,
+    value: 0,
+    callData: all.stakeManager.interface.encodeFunctionData('stakeIdToOwner', [
+      stake.stakeId,
+    ]),
+  }))
+  const stakeChunks = await Promise.all(_.chunk(calls, callsLimit).map((clls) => (
+    all.multicall.callStatic.aggregate3(clls)
+  )))
+  return _(stakeChunks)
+    .flatten()
+    .map((result, index) => (
+      all.stakeManager.interface.decodeFunctionResult('stakeIdToOwner', result.returnData) as unknown as string === account
+        ? stakes[index]
+        : null
+    ))
+    .compact()
+    .value()
+}
+
+const stakesFromResults = (account: string, stakerAddr: string, list: aTypes.IUnderlyingStakeable.StakeStoreStructOutput[]) => {
+  return list.map((stake) => {
+    return {
+      stakeId: `${stake.stakeId}`,
+      startDay: `${stake.lockedDay}`,
+      stakedDays: `${stake.stakedDays}`,
+      endDay: `${stake.lockedDay + stake.stakedDays}`,
+      stakerAddr,
+      stakeEnd: {
+        penalty: '0',
+        payout: '0',
+      },
+      owner: account,
+    } as types.StakesEndingOnDay
+  })
+}
+
+const getStakesFromChainUnderAccount = async (chainId: number, account: string) => {
+  const [
+    resultsFromAccount,
+    resultsFromStakeManager,
+    resultsFromExistingStakeManager,
+  ] = await Promise.all([
+    loadStakesFrom(chainId, account),
+    loadStakesFrom(chainId, addresses.StakeManager).then(onlyOwnedBy(chainId, account, addresses.StakeManager)),
+    loadStakesFrom(chainId, addresses.ExistingStakeManager).then(onlyOwnedBy(chainId, account, addresses.ExistingStakeManager)),
+  ])
+  return ([] as types.StakesEndingOnDay[])
+    .concat(
+      stakesFromResults(account, account, resultsFromAccount),
+      stakesFromResults(account, addresses.StakeManager, resultsFromStakeManager),
+      stakesFromResults(account, addresses.ExistingStakeManager, resultsFromExistingStakeManager),
+    )
+}
+
 const getAllInDay = async (chainId: number, day: number) => {
   const client = graphql.hexClients.get(chainId)
   if (!client) {
@@ -80,11 +161,41 @@ const getAllInDay = async (chainId: number, day: number) => {
   }))
 }
 
+const getAllUnderAccount = async (chainId: number, account: string) => {
+  const client = graphql.hexClients.get(chainId)
+  if (!client) {
+    // write a multicall to get this data
+    if (chainId === 31337) {
+      return await getStakesFromChainUnderAccount(chainId, account)
+    }
+    throw new Error('chain not supported')
+  }
+  const allInDay: types.StakesEndingOnDay[] = []
+  let hasMore = false
+  const limit = 100
+  do {
+    // only does hex - still need stake manager
+    const response = await client.request<types.StakesEndingOnDayResponse>(graphql.queries.STAKES_UNDER_ACCOUNT, {
+      account,
+    })
+    const { stakeStarts } = response
+    allInDay.push(...stakeStarts)
+    hasMore = stakeStarts.length === limit
+  } while (hasMore);
+  return allInDay.map((stake) => ({
+    ...stake,
+    owner: account,
+  }))
+}
+
 const options: LRUCache.Options<string, types.StakesEndingOnDay[], any> = {
   ttlAutopurge: true,
   ttl: 1_000 * 60 * 5,
   fetchMethod: async (key) => {
     const [chainId, day] = key.split('-')
+    if (ethers.utils.isAddress(day)) {
+      return await getAllUnderAccount(+chainId, day)
+    }
     return await getAllInDay(+chainId, +day)
   },
 }

@@ -11,10 +11,6 @@
   import Footer from '../components/Footer.svelte'
 	import NavigatingIndicator from "../components/NavigatingIndicator.svelte";
   import NetworkChooser from '../components/NetworkChooser.svelte'
-
-  const {
-    chains,
-  } = web3Store
 </script>
 
 <div class="container m-auto flex justify-between max-w-5xl h-14 items-center p-2">
@@ -24,7 +20,9 @@
     <NavigatingIndicator />
   </div>
   <div class="gap-2 my-1 flex">
+    {#if $page.data.chainId}
     <ConnectWallet />
+    {/if}
     <NetworkChooser />
   </div>
 </div>

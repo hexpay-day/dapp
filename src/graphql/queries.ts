@@ -47,3 +47,21 @@ query GetStakeIsHsi($stakeIds: [Int!]!) {
     }
   }
 }`
+
+export const STAKES_UNDER_ACCOUNT = gql`
+query All ($account: String!) {
+  stakeStarts(first: 1000, where: {
+    stakerAddr: $account
+  }) {
+    stakeId
+    stakedDays
+    stakeShares
+    stakedHearts
+    startDay
+    endDay
+    stakeEnd {
+      payout
+      penalty
+    }
+  }
+}`

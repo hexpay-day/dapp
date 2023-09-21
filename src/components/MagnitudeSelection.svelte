@@ -2,7 +2,7 @@
   import {
     Label,
     ButtonGroup,
-	InputAddon,
+    InputAddon,
   } from 'flowbite-svelte'
   import IconDropdown from './IconDropdown.svelte'
 	import _ from 'lodash';

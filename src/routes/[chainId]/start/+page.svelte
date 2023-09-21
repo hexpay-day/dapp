@@ -28,7 +28,7 @@
 	import * as stakeStartStore from "../../../stores/stake-start";
 	import type { EncodableSettings } from "@hexpayday/stake-manager/artifacts/types";
 	import { addToSequence } from "../../../stores/sequence";
-  import { FundingOrigin, TaskType } from '../../../types'
+  import { FundingOrigin, TaskType, type MagnitudeSelection as MagSelect } from '../../../types'
   const {
     useISO,
     timezoneLabel,
@@ -55,7 +55,7 @@
     canMintHedronAtAnyTime,
     shouldMintHedronAtEnd,
     contractCustodyTokens,
-    allowStakeToBeTransferred,
+    allowStakeToBeTransfered,
     newStakeDaysSelection,
     repeatStakeDaysOptions,
     newStakeAmountSelection,
@@ -65,6 +65,7 @@
     repeatStakeAmountOptions,
     updateEndDateFromDay,
     handleDayUpdate,
+    resetData,
     validatedAccount,
     copyIterations,
     fundFromWallet,
@@ -73,9 +74,65 @@
   $: fetchData($chainId, $address)
   $: dateInputBoundValue = $dateInputValue
   const id = _.uniqueId()
-  const resetInputs = () => {
-    amount.set('')
-    stakeStartStore.resetEndDay()
+  const linear = (selection: MagSelect) => {
+    let { method, numerator, denominator } = selection
+    // only methods 0-2 are supported currently
+    if (method == 0n || method == 2n) {
+      // 0 is a rejection of use
+      // 2 uses the value provided from chain
+      numerator = 0n
+      denominator = 0n
+    } else if (method == 1n) {
+      // 1 is a constant
+      denominator = numerator
+      numerator = 0n
+    }
+    method = method % 3n
+    const xFactor = method / 3n
+    // scaled numbers are not yet available
+    return {
+      method,
+      x: numerator,
+      y: denominator,
+      b: 0n,
+      xFactor,
+      yFactor: 0n,
+      bFactor: 0n,
+    }
+  }
+  let encodableSettings!: EncodableSettings.SettingsStruct
+  $: encodableSettings = {
+    targetTip: linear($hexTipSelection),
+    hedronTip: linear($hedronTipSelection),
+    newStake: linear($newStakeAmountSelection),
+    newStakeDaysMethod: $newStakeDaysSelection.method,
+    newStakeDaysMagnitude: $newStakeDaysSelection.method === 0n
+      ? 0n
+      : (
+        $newStakeDaysSelection.method === 2n ? 0n
+        : (
+          $newStakeDaysSelection.method === 1n && $newStakeDaysSelection.numerator === 0n
+            ? 1n
+            : $newStakeDaysSelection.numerator
+        )
+      ),
+    newStakeMethod: $newStakeAmountSelection.method,
+    newStakeMagnitude: $newStakeAmountSelection.method === 0n ? 0n : (
+      $newStakeAmountSelection.method === 1n
+        ? $newStakeAmountSelection.numerator
+        : $newStakeAmountSelection.numerator << 32n | $newStakeAmountSelection.denominator
+    ),
+    copyIterations: $copyIterations,
+    consentAbilities: {
+      canStakeEnd: $othersCanEnd,
+      canEarlyStakeEnd: false, // don't allow a stake to be early ended at creation time
+      canMintHedron: $canMintHedronAtAnyTime,
+      canMintHedronAtEnd: $shouldMintHedronAtEnd,
+      shouldSendTokensToStaker: !$contractCustodyTokens,
+      stakeIsTransferable: $allowStakeToBeTransfered,
+      copyExternalTips: false,
+      hasExternalTips: false,
+    } as EncodableSettings.ConsentAbilitiesStruct,
   }
   $: settings = {
     // can flip this to be isolated if desired
@@ -88,51 +145,7 @@
     fundingOrigin: $fundFromWallet ? FundingOrigin.connected : (
       $startStakeFromUnattributed ? FundingOrigin.unattributed : FundingOrigin.deposited
     ),
-    settings: {
-      tipMethod: $hexTipSelection.method,
-      tipMagnitude: $hexTipSelection.method === 0n ? 0n
-        : (
-          $hexTipSelection.method === 1n
-            ? $hexTipSelection.numerator
-            : ($hexTipSelection.numerator << 32n) | $hexTipSelection.denominator
-        ),
-      hedronTipMethod: $hedronTipSelection.method,
-      hedronTipMagnitude: $hedronTipSelection.method === 0n
-        ? 0n
-        : (
-          $hedronTipSelection.method === 1n
-            ? $hedronTipSelection.numerator
-            : ($hedronTipSelection.numerator << 32n) | $hedronTipSelection.denominator
-        ),
-      newStakeDaysMethod: $newStakeDaysSelection.method,
-      newStakeDaysMagnitude: $newStakeDaysSelection.method === 0n
-        ? 0n
-        : (
-          $newStakeDaysSelection.method === 2n ? 0n
-          : (
-            $newStakeDaysSelection.method === 1n && $newStakeDaysSelection.numerator === 0n
-              ? 1n
-              : $newStakeDaysSelection.numerator
-          )
-        ),
-      newStakeMethod: $newStakeAmountSelection.method,
-      newStakeMagnitude: $newStakeAmountSelection.method === 0n ? 0n : (
-        $newStakeAmountSelection.method === 1n
-          ? $newStakeAmountSelection.numerator
-          : $newStakeAmountSelection.numerator << 32n | $newStakeAmountSelection.denominator
-      ),
-      copyIterations: $copyIterations,
-      consentAbilities: {
-        canStakeEnd: $othersCanEnd,
-        canEarlyStakeEnd: false, // don't allow a stake to be early ended at creation time
-        canMintHedron: $canMintHedronAtAnyTime,
-        canMintHedronAtEnd: $shouldMintHedronAtEnd,
-        shouldSendTokensToStaker: !$contractCustodyTokens,
-        stakeIsTransferrable: $allowStakeToBeTransferred,
-        copyExternalTips: false,
-        hasExternalTips: false,
-      } as EncodableSettings.ConsentAbilitiesStruct,
-    } as EncodableSettings.SettingsStruct,
+    settings: encodableSettings,
   }
 </script>
 <div class="grid grid-cols-2 max-w-5xl m-auto gap-x-4">
@@ -246,7 +259,7 @@
               <Helper class="pl-14">Contract should retain custodian of tokens until owner collects them.</Helper>
             </Label>
             <Label class="p-2">
-              <Toggle bind:checked={$allowStakeToBeTransferred}>Allow Stake to be Transferred</Toggle>
+              <Toggle bind:checked={$allowStakeToBeTransfered}>Allow Stake to be Transferred</Toggle>
               <Helper class="pl-14">Allow the owner of the stake to change. Can only be turned off after stake start.</Helper>
             </Label>
             {#if !$fundFromWallet}
@@ -275,7 +288,7 @@
     <div class="flex flex-col col-span-1">
       <Label for="funder-input" class="text-gray-900 dark:text-gray-300">{$fundOther ? 'Funder' : 'Owner'}</Label>
       <div class="flex flex-row space-x-2">
-        <Input id="funder-input" class="text-base leading-[1.25rem]" bind:value={$address} disabled />
+        <Input id="funder-input" class="text-base leading-[1.25rem]" value={$address} disabled />
       </div>
     </div>
     <div class="flex flex-col col-span-1" title="Gift a new stake to another account, a cold wallet, etc.">
@@ -324,7 +337,7 @@
         <MagnitudeSelection
           label="Tip"
           on:change={(e) => { hexTipSelection.set(e.detail.value) }}
-          showDenominatorWhenOver={3}
+          showDenominatorWhenOver={2}
           maxUint={64}
           suffix="HEX"
           disableInputDuring={[0]}
@@ -337,15 +350,15 @@
             text: 'Constant',
             inputText: '',
           }, {
-            value: 4,
+            value: 3,
             text: '% of Total',
             inputText: '',
           }, {
-            value: 5,
+            value: 4,
             text: '% of Principle',
             inputText: '',
           }, {
-            value: 6,
+            value: 5,
             text: '% of Yield',
             inputText: '',
           }]}>
@@ -393,7 +406,7 @@
     <div class="flex flex-col col-span-{$useAdvancedSettings ? '2' : '1'} items-end">
       <Button disabled={!$amountIsValid} class="h-[42px] mt-5" on:click={() => {
         addToSequence(TaskType.start, settings)
-        resetInputs()
+        resetData()
       }}>Add to Sequence<IconShoppingCartPlus class="ml-2" /></Button>
     </div>
   </div>

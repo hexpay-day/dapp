@@ -18,6 +18,7 @@
     TimelineTypes,
     addStakeToTimeline,
   } = filteredStakesStore
+  console.log(stake)
 </script>
 
 <div class="flex">

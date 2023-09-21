@@ -68,7 +68,7 @@
     })
     goto(url, {
       keepFocus: true,
-      replaceState: true,
+      replaceState: false,
       noScroll: true,
       invalidateAll: true,
     })

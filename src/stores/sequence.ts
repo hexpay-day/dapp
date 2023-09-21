@@ -1,7 +1,7 @@
 import type { StakeManager } from "@hexpayday/stake-manager/artifacts/types";
 import * as addresses from './addresses'
 import { all } from './contracts'
-import type { ethers } from "ethers";
+import type { ContractTransaction, ethers } from "ethers";
 import { derived, get } from "svelte/store";
 import { scoped, setScoped } from './local'
 import { writable } from 'svelte/store'
@@ -9,6 +9,7 @@ import { hexData } from "./hex";
 import { address, chainId, signer } from "./web3";
 import type { ApprovalStep, StakeStartStep, Step, Tasks } from "../types";
 import { TaskType, FundingOrigin } from '../types'
+import _ from "lodash";
 
 export const addToSequence = (type: TaskType, task: Tasks) => {
   items.update(($items) => (
@@ -20,8 +21,10 @@ export const addToSequence = (type: TaskType, task: Tasks) => {
 }
 
 export const removeFromSequence = (seq: Step) => {
+  // console.log(seq, get(items))
+  // setScoped(scoped, 'sequence', get(items).filter((i) => !_.isEqual(i, seq)))
   items.update(($items) => (
-    $items.filter((i) => i !== seq)
+    $items.filter((i) => !_.isEqual(i, seq))
   ))
 }
 
@@ -99,6 +102,7 @@ export const executeList = async ($group: TaskGroup) => {
       console.log('tx sent %o', tx?.hash)
       if (!tx) return
       const receipt = await tx.wait()
+      $group.items.forEach(removeFromSequence)
       console.log('tx mined %o', receipt.transactionHash)
     })
 }

@@ -62,10 +62,6 @@ const defaultSelection: MagnitudeSelection = {
 }
 export const newStakeAmountSelection = writable<MagnitudeSelection>({ ...defaultSelection })
 export const newStakeDaysSelection = writable<MagnitudeSelection>({ ...defaultSelection, method: 2n })
-// newStakeDaysSelection.subscribe(($newStakeDaysSelection) => {
-//   console.log($newStakeDaysSelection)
-//   debugger;
-// })
 export const hexTipSelection = writable<MagnitudeSelection>({ ...defaultSelection })
 export const hedronTipSelection = writable<MagnitudeSelection>({ ...defaultSelection })
 export const showSettings = writable(false)
@@ -78,11 +74,25 @@ export const othersCanEnd = writable(true)
 export const canMintHedronAtAnyTime = writable(true)
 export const shouldMintHedronAtEnd = writable(true)
 export const contractCustodyTokens = writable(true)
-export const allowStakeToBeTransferred = writable(false)
+export const allowStakeToBeTransfered = writable(false)
 export const fundOther = writable(false)
 export const copyIterations = writable(255)
 export const fundFromWallet = writable(true)
 export const startStakeFromUnattributed = writable(false)
+export const resetData = () => {
+  canMintHedronAtAnyTime.set(true)
+  shouldMintHedronAtEnd.set(true)
+  contractCustodyTokens.set(true)
+  allowStakeToBeTransfered.set(false)
+  copyIterations.set(255)
+  fundOther.set(false)
+  othersCanEnd.set(true)
+  fundFromWallet.set(true)
+  startStakeFromUnattributed.set(false)
+  amount.set('')
+  resetEndDay()
+  showSettings.set(false)
+}
 export const handleDayUpdate = (e: unknown) => {
   const days = (e as CustomEvent).detail.value as null | bigint
   if (!days) return
@@ -96,12 +106,33 @@ export const resetEndDay = () => {
 }
 export const tips = writable<Tip[]>([])
 export const setting = writable<EncodableSettings.SettingsStruct>({
-  tipMethod: 0n,
-  tipMagnitude: 0n,
-  hedronTipMethod: 0n,
-  hedronTipMagnitude: 0n,
-  newStakeMethod: 0n,
-  newStakeMagnitude: 0n,
+  targetTip: {
+    method: 0n,
+    xFactor: 0n,
+    x: 0n,
+    yFactor: 0n,
+    y: 0n,
+    bFactor: 0n,
+    b: 0n,
+  },
+  hedronTip: {
+    method: 0n,
+    xFactor: 0n,
+    x: 0n,
+    yFactor: 0n,
+    y: 0n,
+    bFactor: 0n,
+    b: 0n,
+  },
+  newStake: {
+    method: 0n,
+    xFactor: 0n,
+    x: 0n,
+    yFactor: 0n,
+    y: 0n,
+    bFactor: 0n,
+    b: 0n,
+  },
   newStakeDaysMethod: 0n,
   newStakeDaysMagnitude: 0n,
   copyIterations: 0n,
@@ -111,7 +142,7 @@ export const setting = writable<EncodableSettings.SettingsStruct>({
     canMintHedron: false,
     canMintHedronAtEnd: false,
     shouldSendTokensToStaker: false,
-    stakeIsTransferrable: false,
+    stakeIsTransferable: false,
     copyExternalTips: false,
     hasExternalTips: false,
   },
@@ -144,15 +175,15 @@ export const repeatStakeAmountOptions = derived([newStakeDaysSelection], ([$newS
   text: 'Constant',
   inputText: '',
 }, {
-  value: 4,
+  value: 3,
   text: '% of Total',
   inputText: '',
 }, {
-  value: 5,
+  value: 4,
   text: '% of Principle',
   inputText: '',
 }, {
-  value: 6,
+  value: 5,
   text: '% of Yield',
   inputText: '',
 })))

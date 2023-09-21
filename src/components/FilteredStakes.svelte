@@ -4,10 +4,10 @@
   import * as filteredStakesStore from '../stores/filtered-stakes'
   import * as addressesStore from '../stores/addresses'
   import EndSettings from './EndSettings.svelte'
-  import {
-    IconChevronDown,
-    IconChevronUp,
-  } from '@tabler/icons-svelte'
+  // import {
+  //   IconChevronDown,
+  //   IconChevronUp,
+  // } from '@tabler/icons-svelte'
 	import { renderHedronIcon } from '../stores/image';
 
   $: filtered = filteredStakesStore.filtered
@@ -17,9 +17,11 @@
       addressesStore.perpetuals.has(v.owner) ? `<span class="w-6 inline-block"><img width="20" height="20" alt="a gold letter m on a blue background with faded hexagons and a gold border" src="/maximus.png" title="${v.custodian}" /></span>` : '<span class="w-6 inline-block"></span>'
     )
   }
-  const sizeMultiplier = 1.4
-  const iconExpanded = `<span class="flex justify-center items-center ml-auto w-6 h-6"><svg viewBox="0 0 ${10} ${7}" height="${7 * sizeMultiplier}" width="${10 * sizeMultiplier}">${IconChevronDown}</svg></span>`
-  const iconExpand = `<span class="flex justify-center items-center ml-auto w-6 h-6"><svg viewBox="0 0 ${10} ${7}" height="${7 * sizeMultiplier}" width="${10 * sizeMultiplier}">${IconChevronUp}</svg></span>`
+  // const sizeMultiplier = 1.4
+  const iconExpanded = `&#x25B2;`
+  const iconExpand = `&#x25BC;`
+  // const iconExpand = `<span class="flex justify-center items-center ml-auto w-6 h-6"><svg viewBox="0 0 ${10} ${7}" height="${10}" width="${10 * sizeMultiplier}">${IconChevronUp}</svg></span>`
+  $: console.log($filtered)
 </script>
 
 <div>

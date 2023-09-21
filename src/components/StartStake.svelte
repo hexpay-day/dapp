@@ -1,9 +1,9 @@
-<script lang="ts">
+<!-- <script lang="ts">
   import * as ethers from 'ethers'
   import { writable } from 'svelte/store'
   import { page } from '$app/stores';
   import { address, chainId, signer } from '../stores/web3'
-  import { targetDay as days, day } from '../stores/day'
+  import { targetDay as days } from '../stores/day'
   import * as addresses from '../stores/addresses'
   import * as contracts from '../stores/contracts'
   import * as settingsStore from '../stores/settings'
@@ -25,15 +25,15 @@
       text: 'constant value',
     },
     {
-      value: 4,
+      value: 3,
       text: 'ratio of total',
     },
     {
-      value: 5,
+      value: 4,
       text: 'ratio of yield',
     },
     {
-      value: 6,
+      value: 5,
       text: 'ratio of principle',
     },
   ]
@@ -114,4 +114,4 @@
     <span class="min-w-[250px] whitespace-pre font-mono">Isolated:  {ethers.utils.formatUnits($isolated || 0n, 8)}</span>
     <button on:click={startStake}>Start Stake</button>
   </p>
-</div>
+</div> -->

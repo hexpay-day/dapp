@@ -11,17 +11,17 @@
     <span class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
       <span>HexPay.Day</span>
       <span class="p-1">
-        <a href="https://t.me/+pVPSr--8_SI0MWQx">
+        <a target="_blank" href="https://t.me/+pVPSr--8_SI0MWQx">
           <IconBrandTelegram /> <!-- name="papper-plane-solid" size="sm"-->
         </a>
       </span>
       <span class="p-1">
-        <a href="https://github.com/hexpay-day/">
+        <a target="_blank" href="https://github.com/orgs/hexpay-day/repositories">
           <IconBrandGithub /> <!-- name="github-solid" size="sm"-->
         </a>
       </span>
       <span class="p-1">
-        <a href="https://twitter.com/HexPay_Day">
+        <a target="_blank" href="https://twitter.com/HexPay_Day">
           <IconBrandTwitter /> <!-- name="twitter-solid" size="sm"-->
         </a>
       </span>
