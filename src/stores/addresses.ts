@@ -6,7 +6,7 @@ export const StakeManager = '0x8B5fc9b2A02fB35155cE96A8Ff73d917a4fDB727'
 export const IsolatedStakeManagerFactory = '0x415012b3029147ED1Ff30022cf11dd683A647D7E'
 export const Multicall = '0xcA11bde05977b3631167028862bE2a173976CA11'
 
-export const ellipsisAddress = (addr: string, offset = 6) => `${addr.slice(0, offset + 2)}...${addr.slice(-offset)}`
+export const ellipsisAddress = (addr: string, offset = 6, onlyPrefix = false) => `${addr.slice(0, offset + 2)}...${onlyPrefix ? '' : addr.slice(-offset)}`
 
 export const perpetuals = new Set<string>([
   '0x0d86EB9f43C57f6FF3BC9E23D8F9d82503f0e84b',

@@ -125,8 +125,8 @@ export const currentBlock = readable<null | ethers.providers.Block>(null, (set) 
   const retrieve = async ($prov: null | ethers.providers.JsonRpcProvider) => {
     if (!$prov) return
     const loop = async () => {
-      const block = await $prov.getBlock('latest')
-      set(block)
+      const block = await $prov.getBlock('latest').catch(() => null)
+      if (block) set(block)
       id = setTimeout(loop, 5_000)
     }
     loop()
