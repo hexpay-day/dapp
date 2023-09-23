@@ -4,7 +4,7 @@
 	import { IconSettings } from "@tabler/icons-svelte";
 </script>
 
-<Button color=alternative>
+<Button color=alternative class="px-4 h-full">
   <IconSettings />
 </Button>
 <Dropdown placement="bottom-start">

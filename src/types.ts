@@ -137,7 +137,9 @@ export type ApprovalStep = {
 export type Tasks = ApprovalStep | StakeStartStep;
 
 export type Step<T extends Tasks = any> = {
+  id: string;
   task: T;
   type: TaskType;
+  optimize: boolean;
   invalid?: boolean;
 }

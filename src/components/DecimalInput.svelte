@@ -56,6 +56,11 @@
         return null
       }
       amnt = amnt === '' && nullIsZero ? '0' : amnt
+      const [num, dec] = amnt.split('.')
+      if (dec?.length > decimals) {
+        text = `${num}.${dec.slice(0, decimals)}`
+        amnt = text
+      }
       const parsed = ethers.utils.parseUnits(amnt, decimals).toBigInt()
       if (parsed === 0n && zeroIsNull) {
         value.set(parsed)

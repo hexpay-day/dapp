@@ -1,23 +1,137 @@
 import type { StakeManager } from "@hexpayday/stake-manager/artifacts/types";
 import * as addresses from './addresses'
 import { all } from './contracts'
-import type { ContractTransaction, ethers } from "ethers";
+import type * as ethers from "ethers";
 import { derived, get } from "svelte/store";
 import { scoped, setScoped } from './local'
 import { writable } from 'svelte/store'
 import { hexData } from "./hex";
-import { address, chainId, signer } from "./web3";
+import { address, chainId, provider, signer } from "./web3";
 import type { ApprovalStep, StakeStartStep, Step, Tasks } from "../types";
 import { TaskType, FundingOrigin } from '../types'
 import _ from "lodash";
+import type { AccessListish } from "ethers/lib/utils";
 
-export const addToSequence = (type: TaskType, task: Tasks) => {
+export const addToSequence = (type: TaskType, task: Tasks, optimize = false) => {
   items.update(($items) => (
     $items.concat({
+      id: _.uniqueId('step'),
+      optimize,
       task,
       type,
     })
   ))
+}
+
+const getContracts = () => {
+  const $signer = get(signer)
+  const $chainId = get(chainId)
+  if (!$signer || !$chainId) {
+    throw new Error('not connected to wallet')
+  }
+  return all($chainId, $signer)
+}
+
+type RpcMethods = 'functions' | 'callStatic' | 'estimateGas' | 'accessList' | 'populateTransaction'
+
+const _callOnContracts = async (
+  contracts: ReturnType<typeof getContracts>,
+  step: Step,
+  rpcMethod: RpcMethods = 'functions',
+  overrides: ethers.CallOverrides = {},
+) => {
+  if (rpcMethod === 'accessList') throw new Error('internal call on access list not supported')
+  const $chainId = get(chainId)
+  const extra: ethers.CallOverrides[] = []
+  if (!_.isEmpty(overrides)) {
+    extra.push(overrides)
+  }
+  if (step.type === TaskType.start) {
+    return contracts.stakeManager[rpcMethod].stakeStart(
+      step.task.amount as ethers.BigNumberish,
+      step.task.lockedDays,
+      ...extra,
+    )
+  } else if (step.type === TaskType.approval) {
+    const task = step.task as ApprovalStep
+    return contracts.hex[rpcMethod].approve(
+      task.contract,
+      task.consumed - task.allowance,
+      ...extra,
+    )
+  }
+  throw new Error('method not supported')
+}
+
+let useAccessList = true
+const callOnContracts = async (
+  contracts: ReturnType<typeof getContracts>,
+  step: Step,
+  rpcMethod: RpcMethods = 'functions',
+  overrides?: ethers.CallOverrides,
+) => {
+  if (rpcMethod === 'accessList') {
+    const tx = await _callOnContracts(contracts, step, 'populateTransaction') as ethers.PopulatedTransaction
+    const $provider = get(provider)
+    if (!$provider) throw new Error('unable to access provider')
+    if (!useAccessList) return createAccessListFromDebug($provider, contracts, step, tx)
+    const accessList = await $provider.send('eth_createAccessList', [tx]).catch(() => null)
+    if (!accessList) {
+      useAccessList = false
+    }
+    return createAccessListFromDebug($provider, contracts, step, tx)
+  }
+  return _callOnContracts(contracts, step, rpcMethod, overrides)
+}
+
+type AccessListResponse = {
+  accessList: AccessListish;
+  gasUsed: bigint;
+}
+
+export const defaultAccessListResponse: AccessListResponse = {
+  accessList: [],
+  gasUsed: 0n,
+}
+
+const createAccessListFromDebug = async (
+  $provider: ethers.providers.Web3Provider,
+  contracts: ReturnType<typeof getContracts>,
+  step: Step,
+  tx: ethers.PopulatedTransaction,
+) : Promise<AccessListResponse> => {
+  // console.log(tx)
+  const debug = await $provider.send('debug_traceCall', [tx]).catch(() => null)
+  // console.log(debug)
+  return {
+    ...defaultAccessListResponse,
+  }
+}
+
+export const estimateGas = async (step: Step) => {
+  const contracts = getContracts()
+  let accessListResponse = {
+    ...defaultAccessListResponse,
+  }
+  if (step.optimize) {
+    accessListResponse = await callOnContracts(contracts, step, 'accessList') as AccessListResponse
+  }
+  const gasUsedResponse = await callOnContracts(contracts, step, 'estimateGas') as ethers.BigNumber
+  const gasUsed = gasUsedResponse.toBigInt()
+  return {
+    gasUsed,
+    optimized: accessListResponse,
+  }
+}
+
+export const updateSequenceItem = (step: Step, updates: Partial<Step>) => {
+  items.update(($items) => {
+    return $items.map(($item) => {
+      if ($item.id !== step.id) return $item
+      console.log($item, updates)
+      return _.merge($item, updates)
+    })
+  })
 }
 
 export const removeFromSequence = (seq: Step) => {
@@ -86,6 +200,8 @@ export const ordered = derived([items, hexData], ([$items, $hexData]) => {
 const approvalStep = (allowance: bigint, consumed: bigint): Step => {
   return {
     type: TaskType.approval,
+    optimize: true,
+    id: 'approval',
     task: {
       allowance,
       consumed,

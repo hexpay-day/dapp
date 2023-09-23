@@ -17,6 +17,7 @@ export const chains = new Map<number, Chain>([
 
 export const windowIsAvailable = readable(typeof window !== 'undefined')
 export const intendsToConnect = writable(false)
+export const clickedConnect = writable(false)
 export const chainId = writable(0)
 
 export const replaceUrl = ($chainId: number, path: string) => {
@@ -57,6 +58,9 @@ const underlyingProvider = readable<null | ethers.providers.ExternalProvider>(nu
   const setup = () => {
     try {
       // @ts-ignore
+      if (get(clickedConnect) && !get(intendsToConnect)) {
+        return
+      }
       underlying.addListener('chainChanged', providerNetworkSwitched)
       intendsToConnect.set((underlying as any).isConnected())
     } catch (err) {}
@@ -199,6 +203,7 @@ export const facilitateConnect = async (requestedChainId: number) => {
 }
 
 export const facilitateDisconnect = async () => {
+  clickedConnect.set(true)
   intendsToConnect.set(false)
 }
 

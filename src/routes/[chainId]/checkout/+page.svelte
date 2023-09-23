@@ -31,6 +31,7 @@
 	import { ethers } from 'ethers';
   import Address from '../../../components/Address.svelte'
 	import { address, numberWithCommas } from '../../../stores/web3';
+  import SequenceGasInfo from '../../../components/SequenceGasInfo.svelte'
 
   let targeted = 0
 </script>
@@ -53,6 +54,7 @@ nothing to check out
           <TimelineIcon type="thumbup" />
         </svelte:fragment>
         <ApprovalReadout max={item.task.balance} amount={item.task.minimum} decimals={8} />
+        <SequenceGasInfo isFirst={index === 0} step={item} />
       </TimelineItem>
       {:else if item.type === TaskType.start}
       <TimelineItem title="Start Stake">
@@ -98,6 +100,7 @@ nothing to check out
               removeFromSequence(item)
             }}><IconX /></Button>
           </div>
+          <SequenceGasInfo isFirst={index === 0} step={item} />
         </div>
       </TimelineItem>
       {/if}

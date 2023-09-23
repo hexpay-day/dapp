@@ -4,6 +4,7 @@
     Label,
     Toggle,
   } from 'flowbite-svelte'
+	import { numberWithCommas } from '../stores/web3';
   let checked = false
   export let amount = 0n
   export let decimals = 18
@@ -11,5 +12,5 @@
 </script>
 <div class="flex flex-row">
   <Label defaultClass="flex flex-row">Default<Toggle class="ml-3" bind:checked={checked} />Max (Balance)</Label>
-  <span class="ml-4">{#if checked}{ethers.utils.formatUnits(max, decimals)}{:else}{ethers.utils.formatUnits(amount, decimals)}{/if}</span>
+  <span class="ml-4">{numberWithCommas(ethers.utils.formatUnits(checked ? max : amount, decimals))}</span>
 </div>

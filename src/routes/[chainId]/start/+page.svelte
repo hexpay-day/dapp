@@ -16,6 +16,8 @@
   import {
     IconCalendar,
     IconGift,
+    IconShoppingCart,
+    IconShoppingCartBolt,
     IconShoppingCartPlus,
   } from '@tabler/icons-svelte'
 	import _ from "lodash";
@@ -29,6 +31,7 @@
 	import type { EncodableSettings } from "@hexpayday/stake-manager/artifacts/types";
 	import { addToSequence } from "../../../stores/sequence";
   import { FundingOrigin, TaskType, type MagnitudeSelection as MagSelect } from '../../../types'
+	import { goto } from "$app/navigation";
   const {
     useISO,
     timezoneLabel,
@@ -403,11 +406,18 @@
       </div>
     </div>
     {/if}
-    <div class="flex flex-col col-span-{$useAdvancedSettings ? '2' : '1'} items-end">
-      <Button disabled={!$amountIsValid} class="h-[42px] mt-5" on:click={() => {
-        addToSequence(TaskType.start, settings)
-        resetData()
-      }}>Add to Sequence<IconShoppingCartPlus class="ml-2" /></Button>
+    <div class="flex justify-end col-span-{$useAdvancedSettings ? '2' : '1'} items-end flex-row">
+      <ButtonGroup>
+        <Button disabled={!$amountIsValid} class="h-[42px] mt-5" on:click={() => {
+          addToSequence(TaskType.start, settings, true)
+          resetData()
+        }}>Add to Sequence</Button>
+        <Button disabled={!$amountIsValid} class="mt-5" on:click={() => {
+          addToSequence(TaskType.start, settings, true)
+          resetData()
+          goto('./checkout')
+        }}><IconShoppingCartBolt /></Button>
+      </ButtonGroup>
     </div>
   </div>
   {/if}

@@ -3,7 +3,8 @@
 	import { IconLogout } from '@tabler/icons-svelte';
   import Address from './Address.svelte'
   import {
-    chainId,
+    intendsToConnect,
+    clickedConnect,
     connected,
     connectable,
     address,
@@ -12,15 +13,16 @@
   } from '../stores/web3'
 	import { Button, ButtonGroup } from 'flowbite-svelte';
   const connect = async () => {
+    clickedConnect.set(true)
     await facilitateConnect($page.data.chainId)
   }
   const disconnect = async () => {
+    clickedConnect.set(true)
     await facilitateDisconnect()
   }
-  // $: trulyConnected = $connected && $page.data.chainId === $chainId
 </script>
 
-{#if $connected}
+{#if $connected && $intendsToConnect}
 <ButtonGroup>
   <Button class="h-[42px]"><Address address={$address} ellipsis /></Button>
   <Button on:click={disconnect} color="primary" class="px-3">
