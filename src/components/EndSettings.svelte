@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as types from '../types'
 	import {
     IconCirclePlus,
     IconFilePencil,
@@ -11,11 +12,11 @@
     DropdownItem,
   } from "flowbite-svelte";
 
-  export let stake!: filteredStakesStore.Stake
+  export let stake!: types.Stake
   $: timeline = filteredStakesStore.timeline
   $: address = web3Store.address
   const {
-    TimelineTypes,
+    // TimelineTypes,
     addStakeToTimeline,
   } = filteredStakesStore
   console.log(stake)
@@ -35,12 +36,12 @@
     <div class="relative">
       <Button size="sm">Add&NonBreakingSpace;<IconCirclePlus /></Button> <!-- name="circle-plus-solid" -->
       <Dropdown placement="bottom-start">
-        <DropdownItem on:click={() => addStakeToTimeline(TimelineTypes.OTHER, stake)}>Other</DropdownItem>
-        <DropdownItem on:click={() => addStakeToTimeline(TimelineTypes.GOOD_ACCOUNT, stake)}>Good Account</DropdownItem>
-        <DropdownItem on:click={() => addStakeToTimeline(TimelineTypes.END, stake)}>End Stake</DropdownItem>
+        <DropdownItem on:click={() => addStakeToTimeline(types.TimelineTypes.UPDATE, stake)}>Update</DropdownItem>
+        <DropdownItem on:click={() => addStakeToTimeline(types.TimelineTypes.GOOD_ACCOUNT, stake)}>Good Account</DropdownItem>
+        <DropdownItem on:click={() => addStakeToTimeline(types.TimelineTypes.END, stake)}>End Stake</DropdownItem>
         {#if $address === stake.owner}
         <!-- optimized pathway that skips all checks -->
-        <DropdownItem on:click={() => addStakeToTimeline(TimelineTypes.RESTART, stake)}>Restart Stake</DropdownItem>
+        <DropdownItem on:click={() => addStakeToTimeline(types.TimelineTypes.RESTART, stake)}>Restart Stake</DropdownItem>
         {/if}
       </Dropdown>
     </div>

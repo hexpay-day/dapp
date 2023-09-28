@@ -3,11 +3,6 @@
   import ConnectWallet from '../components/ConnectWallet.svelte'
   import SpeedNav from '../components/SpeedNav.svelte'
   import { page } from '$app/stores';
-  // import * as web3Store from '../stores/web3'
-  // import ToggleTimezone from '../components/ToggleTimezone.svelte'
-  // import {
-  //   DarkMode,
-  // } from 'flowbite-svelte'
   import Settings from '../components/Settings.svelte'
   import Footer from '../components/Footer.svelte'
 	import NavigatingIndicator from "../components/NavigatingIndicator.svelte";

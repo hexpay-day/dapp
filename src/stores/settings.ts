@@ -1,6 +1,10 @@
 import type { EncodableSettings } from "@hexpayday/stake-manager/artifacts/types"
 import _ from "lodash"
-import { get, writable } from "svelte/store"
+import { derived, get, writable } from "svelte/store"
+import type { Tip, MagnitudeSelection, DropdownOption } from "../types";
+import dayjs from "dayjs"
+import { ethers } from "ethers"
+import { DAY, startDateISO, minDateISO, timezoneOffset, useISO } from "./day"
 
 export const emptySettings = () => ({
   targetTip: {
@@ -45,38 +49,132 @@ export const emptySettings = () => ({
   },
 })
 
-export const settings = writable<EncodableSettings.SettingsStruct>(emptySettings())
-export const hedronTipMethod = writable(0)
-export const hedronTipMagnitude = writable(0)
-export const tipMethod = writable(0)
-export const tipMagnitude = writable(0)
-export const newStakeMethod = writable(0)
-export const newStakeMagnitude = writable(0)
-export const newStakeDaysMethod = writable(0)
-export const newStakeDaysMagnitude = writable(0)
-export const copyIterations = writable(0)
-export const consentAbilities = writable(0)
+export const amount = writable<string>('')
 
-export const updateConsentAbilities = (index: number, flag: boolean) => {
-  const currentConsentAbilities = get(consentAbilities)
-  const binaryAbilities = _.padStart(currentConsentAbilities.toString(2), 8, '0')
-  const prefix = binaryAbilities.slice(0, index)
-  const suffix = binaryAbilities.slice(index + 1)
-  const binaryValue = flag ? 1 : 0
-  const newBinary = `${prefix}${binaryValue}${suffix}`
-  const nextValue = parseInt(newBinary, 2)
-  consentAbilities.update(() => nextValue)
+export const setting = writable<EncodableSettings.SettingsStruct>(emptySettings())
+
+export const endDateLocal = writable(get(minDateISO))
+minDateISO.subscribe(($minDateISO) => {
+  endDateLocal.set($minDateISO)
+})
+export const endDateISO = derived([endDateLocal], ([$endDateLocal]) => {
+  return new Date(+$endDateLocal + timezoneOffset($endDateLocal))
+})
+export const lockedDays = derived([endDateISO, startDateISO], ([$endDateISO, $startDateISO]) => {
+  return `${dayjs($endDateISO).diff($startDateISO, 'day')}`
+})
+// export const dateInputValue = writable(get(useISO) ? get(endDateISO) : get(endDateLocal))
+export const dateInputValue = derived([useISO, endDateISO, endDateLocal], ([$useISO, $endDateISO, $endDateLocal]) => {
+  return $useISO ? $endDateISO : $endDateLocal
+})
+
+const validAmount = (amount: string) => {
+  try {
+    if (!amount) {
+      return null
+    }
+    if (amount[amount.length - 1] === '.') {
+      return false
+    }
+    const parsed = ethers.utils.parseUnits(amount, 8).toBigInt()
+    if (parsed === 0n) {
+      return null
+    }
+    return true
+  } catch(err) {
+    return false
+  }
 }
+export const amountIsValid = derived([amount], ([$amount]) => {
+  return validAmount($amount)
+})
+const defaultSelection: MagnitudeSelection = {
+  method: 0n,
+  numerator: 0n,
+  denominator: 0n,
+}
+export const newStakeAmountSelection = writable<MagnitudeSelection>({ ...defaultSelection })
+export const newStakeDaysSelection = writable<MagnitudeSelection>({ ...defaultSelection, method: 2n })
+export const hexTipSelection = writable<MagnitudeSelection>({ ...defaultSelection })
+export const hedronTipSelection = writable<MagnitudeSelection>({ ...defaultSelection })
+export const showSettings = writable(false)
+export const disableRepeatStakeAmountDropdownDuring = derived([
+  newStakeDaysSelection,
+], ([$newStakeDaysSelection]) => {
+  return $newStakeDaysSelection.method >= 1n ? [] : [0,1,4,5,6]
+})
+export const othersCanEnd = writable(true)
+export const canMintHedronAtAnyTime = writable(true)
+export const shouldMintHedronAtEnd = writable(true)
+export const contractCustodyTokens = writable(true)
+export const allowStakeToBeTransfered = writable(false)
+export const fundOther = writable(false)
+export const copyIterations = writable(255)
+export const fundFromWallet = writable(true)
+export const startStakeFromUnattributed = writable(false)
+export const resetData = () => {
+  canMintHedronAtAnyTime.set(true)
+  shouldMintHedronAtEnd.set(true)
+  contractCustodyTokens.set(true)
+  allowStakeToBeTransfered.set(false)
+  copyIterations.set(255)
+  fundOther.set(false)
+  othersCanEnd.set(true)
+  fundFromWallet.set(true)
+  startStakeFromUnattributed.set(false)
+  amount.set('')
+  resetEndDay()
+  showSettings.set(false)
+}
+export const handleDayUpdate = (e: unknown) => {
+  const days = (e as CustomEvent).detail.value as null | bigint
+  if (!days) return
+  updateEndDateFromDay(days)
+}
+export const updateEndDateFromDay = (days: bigint) => {
+  endDateLocal.set(new Date(+get(minDateISO) + (parseInt(days.toString(), 10) * DAY) - DAY))
+}
+export const resetEndDay = () => {
+  endDateLocal.set(get(minDateISO))
+}
+export const tips = writable<Tip[]>([])
+export const repeatStakeDaysOptions = derived([lockedDays], ($lockedDays) => ([{
+  value: 2,
+  text: 'Repeat Previous',
+  inputText: `${$lockedDays}`,
+}, {
+  value: 1,
+  text: 'Constant',
+  placeholder: '1',
+  inputText: '',
+}, {
+  value: 3,
+  text: 'Keep Schedule',
+  inputText: 'automated',
+}, {
+  value: 0,
+  text: 'Off',
+  inputText: 'off',
+}] as DropdownOption[]))
 
-// export const formSettings = () => ({
-//   hedronTipMethod: get(hedronTipMethod),
-//   hedronTipMagnitude: get(hedronTipMagnitude),
-//   tipMethod: get(tipMethod),
-//   tipMagnitude: get(tipMagnitude),
-//   newStakeMethod: get(newStakeMethod),
-//   newStakeMagnitude: get(newStakeMagnitude),
-//   newStakeDaysMethod: get(newStakeDaysMethod),
-//   newStakeDaysMagnitude: get(newStakeDaysMagnitude),
-//   copyIterations: get(copyIterations),
-//   consentAbilities: get(consentAbilities),
-// })
+export const repeatStakeAmountOptions = derived([newStakeDaysSelection], ([$newStakeDaysSelection]) => (($newStakeDaysSelection.method !== 0n ? [] : [{
+  value: 0,
+  text: 'Off',
+  inputText: 'off',
+}]).concat({
+  value: 1,
+  text: 'Constant',
+  inputText: '',
+}, {
+  value: 3,
+  text: '% of Total',
+  inputText: '',
+}, {
+  value: 4,
+  text: '% of Principle',
+  inputText: '',
+}, {
+  value: 5,
+  text: '% of Yield',
+  inputText: '',
+})))

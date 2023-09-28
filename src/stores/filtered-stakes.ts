@@ -4,45 +4,35 @@ import * as addressStore from './addresses'
 import _ from "lodash";
 import { ethers } from "ethers";
 import { today, DAY, launchDate } from './day'
+import { renderHedronIcon } from '../stores/image';
+import type * as types from '../types'
 
-export type Stake = {
-  owner: string;
-  custodian: string;
-  lockedDay: number;
-  stakedDays: number;
-  endDay: number;
-  isHedron: boolean;
-  stakeId: number;
-}
-export enum TimelineTypes {
-  OTHER,
-  END,
-  RESTART,
-  GOOD_ACCOUNT,
+export const iconExpanded = `&#x25B2;`
+export const iconExpand = `&#x25BC;`
+
+export const renderIcon = (v: types.Stake) => {
+  return v.isHedron ? renderHedronIcon(v.custodian) : (
+    addressStore.perpetuals.has(v.owner) ? `<span class="w-6 inline-block"><img width="20" height="20" alt="a gold letter m on a blue background with faded hexagons and a gold border" src="/maximus.png" title="${v.custodian}" /></span>` : '<span class="w-6 inline-block"></span>'
+  )
 }
 
-export type StakeAction = {
-  type: TimelineTypes;
-  stake: Stake;
-}
+export const all = writable<types.Stake[]>([])
 
-export const all = writable<Stake[]>([])
+export const timeline = writable<types.StakeAction[]>([])
 
-export const timeline = writable<StakeAction[]>([])
-
-export const isEndable = (stake: Stake) => {
+export const isEndable = (stake: types.Stake) => {
   return stake.owner === addressStore.StakeManager
     || stake.custodian === addressStore.StakeManager
     || addressStore.perpetuals.has(ethers.utils.getAddress(stake.owner))
 }
-export const isOptimizable = (stake: Stake) => {
+export const isOptimizable = (stake: types.Stake) => {
   return stake.owner === addressStore.StakeManager
     || stake.custodian === addressStore.StakeManager
     || stake.isHedron
     || addressStore.perpetuals.has(ethers.utils.getAddress(stake.owner))
 }
 
-export const addStakeToTimeline = (type: TimelineTypes, stake: Stake) => {
+export const addStakeToTimeline = (type: types.TimelineTypes, stake: types.Stake) => {
   if (stake.stakeId) {
     // removeFromTimelineById(stake.stakeId)
   }

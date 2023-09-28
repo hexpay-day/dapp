@@ -7,18 +7,25 @@ import { scoped, setScoped } from './local'
 import { writable } from 'svelte/store'
 import { hexData } from "./hex";
 import { address, chainId, provider, signer } from "./web3";
-import type { ApprovalStep, StakeStartStep, Step, Tasks } from "../types";
+import { ContractType, type ApprovalStep, type StakeStartStep, type Step, type Tasks } from "../types";
 import { TaskType, FundingOrigin } from '../types'
 import _ from "lodash";
 import type { AccessListish } from "ethers/lib/utils";
 
-export const addToSequence = (type: TaskType, task: Tasks, optimize = false) => {
+type AllContracts = ReturnType<typeof getContracts>
+type RpcMethods = 'functions' | 'callStatic' | 'estimateGas' | 'accessList' | 'populateTransaction'
+
+export const addToSequence = (type: TaskType, task: Tasks, options: Partial<Step> = {
+  optimize: false,
+}) => {
   items.update(($items) => (
     $items.concat({
       id: _.uniqueId('step'),
-      optimize,
       task,
       type,
+      optimize: false,
+      contract: ContractType.StakeManager,
+      ...options,
     })
   ))
 }
@@ -32,10 +39,8 @@ const getContracts = () => {
   return all($chainId, $signer)
 }
 
-type RpcMethods = 'functions' | 'callStatic' | 'estimateGas' | 'accessList' | 'populateTransaction'
-
 const _callOnContracts = async (
-  contracts: ReturnType<typeof getContracts>,
+  contracts: AllContracts,
   step: Step,
   rpcMethod: RpcMethods = 'functions',
   overrides: ethers.CallOverrides = {},
@@ -55,7 +60,7 @@ const _callOnContracts = async (
   } else if (step.type === TaskType.approval) {
     const task = step.task as ApprovalStep
     return contracts.hex[rpcMethod].approve(
-      task.contract,
+      task.spender,
       task.consumed - task.allowance,
       ...extra,
     )
@@ -65,7 +70,7 @@ const _callOnContracts = async (
 
 let useAccessList = true
 const callOnContracts = async (
-  contracts: ReturnType<typeof getContracts>,
+  contracts: AllContracts,
   step: Step,
   rpcMethod: RpcMethods = 'functions',
   overrides?: ethers.CallOverrides,
@@ -96,12 +101,12 @@ export const defaultAccessListResponse: AccessListResponse = {
 
 const createAccessListFromDebug = async (
   $provider: ethers.providers.Web3Provider,
-  contracts: ReturnType<typeof getContracts>,
+  contracts: AllContracts,
   step: Step,
   tx: ethers.PopulatedTransaction,
 ) : Promise<AccessListResponse> => {
   // console.log(tx)
-  const debug = await $provider.send('debug_traceCall', [tx]).catch(() => null)
+  // const debug = await $provider.send('debug_traceCall', [tx]).catch(() => null)
   // console.log(debug)
   return {
     ...defaultAccessListResponse,
@@ -154,6 +159,7 @@ type TaskGroup = {
   items: Step[];
   name: string;
   invalid: boolean;
+  contract: ContractType;
 }
 
 export const ordered = derived([items, hexData], ([$items, $hexData]) => {
@@ -161,7 +167,13 @@ export const ordered = derived([items, hexData], ([$items, $hexData]) => {
   let $bal = $hexData.balance
   const allowance = $hexData.allowance
   let group!: TaskGroup
-  for (const task of $items) {
+  const itemsByContractTarget = _($items)
+    .sortBy('contract')
+    .groupBy('contract')
+    .values()
+    .flatten()
+    .value()
+  for (const task of itemsByContractTarget) {
     if (task.type === TaskType.start) {
       if (task.task.amount) {
         $bal -= BigInt(task.task.amount.toString())
@@ -171,6 +183,7 @@ export const ordered = derived([items, hexData], ([$items, $hexData]) => {
             name: 'Out of $HEX',
             invalid: true,
             items: [],
+            contract: ContractType.Invalid,
           }
           $ordered.push(group)
         }
@@ -181,6 +194,7 @@ export const ordered = derived([items, hexData], ([$items, $hexData]) => {
         name: 'Start Transaction',
         invalid: false,
         items: [],
+        contract: task.contract,
       }
       $ordered.push(group)
     }
@@ -191,23 +205,25 @@ export const ordered = derived([items, hexData], ([$items, $hexData]) => {
     $ordered = ([{
       name: 'Approval',
       invalid: false,
-      items: [approvalStep(allowance, consumed)],
+      contract: ContractType.Hex,
+      items: [hexApprovalStep(allowance, consumed)],
     }] as TaskGroup[]).concat($ordered)
   }
   return $ordered
 })
 
-const approvalStep = (allowance: bigint, consumed: bigint): Step => {
+const hexApprovalStep = (allowance: bigint, consumed: bigint): Step => {
   return {
     type: TaskType.approval,
     optimize: true,
     id: 'approval',
+    contract: ContractType.Hex,
     task: {
       allowance,
       consumed,
       balance: get(hexData).balance,
       minimum: consumed - allowance,
-      contract: addresses.StakeManager,
+      spender: addresses.StakeManager,
     },
   }
 }
@@ -237,29 +253,14 @@ export const executeListOfTasks = async ($group: TaskGroup) => {
   if (items.length === 1 && useOptimizedPath(items[0])) {
     // do not wrap in a multicall - call direct
     const [item] = items
-    if (item.type === TaskType.start) {
-      return contracts.stakeManager.stakeStart(
-        item.task.amount as ethers.BigNumberish,
-        item.task.lockedDays,
-      )
-    } else if (item.type === TaskType.approval) {
-      const task = item.task as ApprovalStep
-      return contracts.hex.approve(
-        task.contract,
-        task.consumed - task.allowance
-      )
-    }
+    return callOnContracts(contracts, item, 'functions') as Promise<ethers.ContractTransaction>
   }
-  const stepsCalldata = items.map((step) => getCalldataFromTask(contracts.stakeManager, step))
-  return await contracts.stakeManager.multicall(stepsCalldata, false)
-    .then((tx) => {
-      $group.items.forEach(removeFromSequence)
-      return tx
-    })
+  const calldata = items.map((step) => getCalldataFromTask(contracts, step))
+  return contracts.stakeManager.multicall(calldata, false)
 }
 
-export const getCalldataFromTask = (stakeManager: StakeManager, step: Step) => {
-  return getCalldataFromStartTask(stakeManager, step)
+export const getCalldataFromTask = (contracts: AllContracts, step: Step) => {
+  return getCalldataFromStartTask(contracts.stakeManager, step)
 }
 
 const useOptimizedPath = (step: Step) => {
@@ -269,7 +270,7 @@ const useOptimizedPath = (step: Step) => {
       fundingOrigin,
       useAdvancedSettings,
     } = step.task
-    return recipient === get(address) && fundingOrigin || !useAdvancedSettings
+    return (recipient === get(address) && fundingOrigin) || !useAdvancedSettings
   } else if (step.type === TaskType.approval) {
     return true
   }

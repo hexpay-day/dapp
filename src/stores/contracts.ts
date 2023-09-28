@@ -14,6 +14,7 @@ export const all = (chainId: number, signer: null | ethers.Signer | ethers.provi
     hsim: new ethers.Contract(addresses.HSIM, abis.IHEXStakeInstanceManager.abi, signer || provider) as unknown as aTypes.IHEXStakeInstanceManager,
     stakeManager: new ethers.Contract(addresses.StakeManager, abis.StakeManager.abi, signer || provider) as unknown as aTypes.StakeManager,
     multicall: new ethers.Contract(addresses.Multicall, abis.Multicall.abi, signer || provider) as unknown as aTypes.IMulticall3,
+    perpetual: (addr: string) => new ethers.Contract(addr, abis.Perpetual.abi, signer || provider) as unknown as aTypes.MockPerpetual,
   }
 }
 

@@ -1,7 +1,29 @@
 import type { EncodableSettings } from "@hexpayday/stake-manager/artifacts/types";
 import type { BigNumberish } from "ethers";
 
-export type Stake = {}
+export type Stake = {
+  owner: string;
+  custodian: string;
+  lockedDay: number;
+  stakedDays: number;
+  endDay: number;
+  isHedron: boolean;
+  tokenized: boolean;
+  stakeId: number;
+}
+
+export enum TimelineTypes {
+  UPDATE = 'Update Stake',
+  END = 'End Stake',
+  RESTART_STAKE = 'Restart Stake',
+  GOOD_ACCOUNT = 'Good Account',
+  DEPOSIT_HSI = 'Deposit Hsi',
+}
+
+export type StakeAction = {
+  type: TimelineTypes;
+  stake: Stake;
+}
 
 export type StakesLoadParams = {
   params: {
@@ -53,7 +75,7 @@ export type StakesEndingOnDay = {
   stakeEnd: {
     penalty: string;
     payout: string;
-  };
+  } | null;
 }
 
 export type StakesEndingOnDayResponse = {
@@ -70,6 +92,12 @@ export type HsiStatusResponse = {
       id: string;
     };
   }[];
+}
+
+export type ExtraInfo = {
+  hsiAddress: string;
+  owner: string;
+  tokenized: boolean;
 }
 
 export type StakeInfo = {
@@ -106,6 +134,7 @@ export type Tip = {
 export enum TaskType {
   approval = 'approval',
   start = 'start',
+  depositHsi = 'depositHsi',
 }
 
 // export type TaskType = keyof taskTypes
@@ -131,10 +160,23 @@ export type StakeStartStep = {
 export type ApprovalStep = {
   allowance: bigint;
   consumed: bigint;
-  contract: string;
+  spender: string;
 }
 
-export type Tasks = ApprovalStep | StakeStartStep;
+export type DepositHsiStep = {
+  stake: Stake;
+  settings: EncodableSettings.SettingsStruct;
+}
+
+export type Tasks = ApprovalStep | StakeStartStep | DepositHsiStep;
+
+export enum ContractType {
+  Invalid = 'Invalid',
+  Hex = 'Hex',
+  ExistingStakeManager ='ExistingStakeManager',
+  StakeManager ='StakeManager',
+  IsolatedStakeManagerFactory ='IsolatedStakeManagerFactory',
+}
 
 export type Step<T extends Tasks = any> = {
   id: string;
@@ -142,4 +184,5 @@ export type Step<T extends Tasks = any> = {
   type: TaskType;
   optimize: boolean;
   invalid?: boolean;
+  contract: ContractType;
 }
