@@ -6,6 +6,7 @@
     IconHexagon,
     IconPencil,
     IconPercentage,
+    IconPray,
   } from "@tabler/icons-svelte";
   export let type = 'none'
 </script>
@@ -21,4 +22,6 @@
 <IconHexagon />&nbsp;{TimelineTypes.END}
 {:else if type === TimelineTypes.RESTART_STAKE}
 <IconFlame />&nbsp;{TimelineTypes.RESTART_STAKE}
+{:else if type === TimelineTypes.GOOD_ACCOUNT_SIGN}
+<IconPray />&nbsp;{TimelineTypes.GOOD_ACCOUNT_SIGN}
 {/if}

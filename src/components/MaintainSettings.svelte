@@ -14,15 +14,18 @@
 	import CheckoutButton from './CheckoutButton.svelte';
 	import StakeSettings from './StakeSettings.svelte';
 	import MaintenanceSetting from './MaintenanceSetting.svelte';
+	import SignForGoodAccount from './SignForGoodAccount.svelte';
 	import { addToSequence } from '../stores/sequence';
+	import * as settingsStore from '../stores/settings';
 	import { TaskType, type TimelineTypes } from '../types';
-	import type { EncodableSettings } from '@hexpayday/stake-manager/artifacts/types';
+	// import type { EncodableSettings } from '@hexpayday/stake-manager/artifacts/types';
+	// import Timeline from './icons/Timeline.svelte';
 
-  let settings!: EncodableSettings.SettingsStruct
+  const settings = settingsStore.setting
   export let stake!: types.Stake
   const { TimelineTypes } = types
   $: address = web3Store.address
-  console.log(stake)
+  $: console.log(stake)
   const defaultClass = (disabled: boolean) => (
     classnames('font-medium py-2 pl-4 pr-6 text-md hover:bg-gray-100 dark:hover:bg-gray-600 w-full text-left flex', {
       'cursor-not-allowed': disabled,
@@ -32,12 +35,14 @@
   if (stake.tokenized) {
     timelineType = TimelineTypes.DEPOSIT_HSI
   }
+  timelineType = TimelineTypes.GOOD_ACCOUNT
   $: notEndable = !filteredStakesStore.isEndable(stake)
   $: depositingUntokenized = timelineType === TimelineTypes.DEPOSIT_HSI && !stake.tokenized
   const timelineTypesToTask = new Map<TimelineTypes, TaskType>([
     [TimelineTypes.DEPOSIT_HSI, TaskType.depositHsi],
   ])
   const taskTypeFromTimelineType = () => timelineTypesToTask.get(timelineType) as TaskType
+  let dropdownOpen = false
 </script>
 
 <!-- {#if !filteredStakesStore.isOptimizable(stake)}
@@ -52,28 +57,27 @@
 <div class="flex flex-row justify-between grid-flow-row">
   <div class="flex">
     <Button size="sm"><IconChevronsRight /></Button>
-    <Dropdown placement="bottom-start">
+    <Dropdown bind:open={dropdownOpen} placement="bottom-start">
       {#if stake.isHedron}
       <DropdownItem
         defaultClass={defaultClass(false)}
-        on:click={() => { timelineType = TimelineTypes.DEPOSIT_HSI }}>
+        on:click={() => { dropdownOpen = false; timelineType = TimelineTypes.DEPOSIT_HSI }}>
         <MaintenanceSetting type={TimelineTypes.DEPOSIT_HSI} />
       </DropdownItem>
       {/if}
       <DropdownItem
         defaultClass={defaultClass(false)}
-        on:click={() => { timelineType = TimelineTypes.UPDATE }}>
+        on:click={() => { dropdownOpen = false; timelineType = TimelineTypes.UPDATE }}>
         <MaintenanceSetting type={TimelineTypes.UPDATE} />
       </DropdownItem>
       <DropdownItem
-        defaultClass={defaultClass(notEndable)}
-        on:click={() => { timelineType = TimelineTypes.GOOD_ACCOUNT }}
-        disabled={notEndable}>
+        defaultClass={defaultClass(false)}
+        on:click={() => { dropdownOpen = false; timelineType = TimelineTypes.GOOD_ACCOUNT }}>
         <MaintenanceSetting type={TimelineTypes.GOOD_ACCOUNT} />
       </DropdownItem>
       <DropdownItem
         defaultClass={defaultClass(notEndable)}
-        on:click={() => { timelineType = TimelineTypes.END }}
+        on:click={() => { dropdownOpen = false; timelineType = TimelineTypes.END }}
         disabled={notEndable}>
         <MaintenanceSetting type={TimelineTypes.END} />
       </DropdownItem>
@@ -81,7 +85,7 @@
       <!-- optimized pathway that skips all checks -->
       <DropdownItem
         defaultClass={defaultClass(notEndable)}
-        on:click={() => { timelineType = TimelineTypes.RESTART_STAKE }}
+        on:click={() => { dropdownOpen = false; timelineType = TimelineTypes.RESTART_STAKE }}
         disabled={notEndable}>
         <MaintenanceSetting type={TimelineTypes.RESTART_STAKE} />
       </DropdownItem>
@@ -89,20 +93,23 @@
     </Dropdown>
     <div class="flex px-2 items-center">
       <MaintenanceSetting type={timelineType} />
+      {#if timelineType === TimelineTypes.GOOD_ACCOUNT}
+      <SignForGoodAccount stake={stake} />
+      {/if}
     </div>
   </div>
   <div class="flex flex-grow">
     {#if depositingUntokenized}
       <Button on:click={() => {}} disabled>Tokenize</Button>
     {/if}
-    <StakeSettings bind:value={settings} />
+    <StakeSettings />
   </div>
   <!-- {/if} -->
   <div class="flex">
     <CheckoutButton disabled={depositingUntokenized} pathReverse={1} action={async () => {
       addToSequence(taskTypeFromTimelineType(), {
         stake,
-        settings,
+        settings: $settings,
       })
     }} />
   </div>

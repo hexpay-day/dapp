@@ -6,7 +6,9 @@
   import { IconPlus } from '@tabler/icons-svelte'
 	import { goto } from "$app/navigation";
 	import { ethers } from 'ethers';
-  $: $chainId && ethers.utils.isAddress($address) && goto(`/${$chainId}/maintain/${$address}`)
+  $: $chainId && ethers.utils.isAddress($address) && goto(`/${$chainId}/maintain/${$address}`, {
+    replaceState: true,
+  })
 </script>
 <div class="flex max-w-5xl m-auto">
 <a href="/{$chainId || 0}/start">

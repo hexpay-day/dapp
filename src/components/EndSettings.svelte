@@ -41,7 +41,7 @@
         <DropdownItem on:click={() => addStakeToTimeline(types.TimelineTypes.END, stake)}>End Stake</DropdownItem>
         {#if $address === stake.owner}
         <!-- optimized pathway that skips all checks -->
-        <DropdownItem on:click={() => addStakeToTimeline(types.TimelineTypes.RESTART, stake)}>Restart Stake</DropdownItem>
+        <DropdownItem on:click={() => addStakeToTimeline(types.TimelineTypes.RESTART_STAKE, stake)}>Restart Stake</DropdownItem>
         {/if}
       </Dropdown>
     </div>

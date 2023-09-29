@@ -65,3 +65,21 @@ query All ($account: String!) {
     }
   }
 }`
+
+export const OWNER_OF = gql`
+query OwnerOf($stakeId: Int!) {
+  stakeStarts(first: 1, where: {
+    stakeId: $stakeId
+  }) {
+    stakeId
+    stakerAddr
+    stakeEnd {
+      payout
+      penalty
+    }
+    stakeGoodAccounting {
+      payout
+      penalty
+    }
+  }
+}`

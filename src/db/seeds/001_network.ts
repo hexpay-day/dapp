@@ -1,5 +1,4 @@
 import type { Knex } from "knex"
-import * as ids from '../ids'
 import * as utils from '../utils'
 import * as config from '../../config'
 
@@ -18,13 +17,9 @@ const desiredNetworks = [{
 }]
 
 export async function seed(knex: Knex): Promise<void> {
-    const fullNetworks = desiredNetworks.map((network) => ({
-        ...network,
-        networkId: ids.network(network.chainId),
-    }))
     await knex(utils.tableNames.NETWORK)
         .withSchema(config.args.databaseSchema)
-        .insert(fullNetworks)
-        .onConflict(['networkId'])
+        .insert(desiredNetworks)
+        .onConflict(['chainId'])
         .merge()
 }

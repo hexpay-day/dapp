@@ -7,6 +7,7 @@ import type { Chain } from '@wagmi/core'
 import _ from 'lodash'
 import { goto } from '$app/navigation'
 import { page } from '$app/stores'
+import type { sequence } from '0xsequence'
 
 export const chains = new Map<number, Chain>([
   [1, mainnet],
@@ -62,7 +63,7 @@ const underlyingProvider = readable<null | ethers.providers.ExternalProvider>(nu
         return
       }
       underlying.addListener('chainChanged', providerNetworkSwitched)
-      intendsToConnect.set((underlying as any).isConnected())
+      // intendsToConnect.set((underlying as any).isConnected())
     } catch (err) {}
   }
   setProvider = () => {
@@ -210,3 +211,37 @@ export const facilitateDisconnect = async () => {
 const defaultDelimiter = ','
 
 export const numberWithCommas = (x: string, delimiter = defaultDelimiter) => x.replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/ugim, delimiter)
+
+export const sign712Message = async (typedRequest: sequence.utils.TypedData) => {
+  const $signer = get(signer)
+  if (!$signer) return
+  return $signer._signTypedData(typedRequest.domain, typedRequest.types, typedRequest.message)
+}
+
+// export const create712Message = {
+//   requestGoodAccount: ({
+//     chainId,
+//     stakeId,
+//   }: {
+//     chainId: number;
+//     stakeId: number;
+//   }): sequence.utils.TypedData => ({
+//     types: {
+//       Stake: [
+//         { name: 'stakeId', type: 'uint256', },
+//       ],
+//     },
+//     primaryType: 'Stake' as const,
+//     domain: {
+//       name: 'HexPay.Day',
+//       version: '1',
+//       chainId,
+//       verifyingContract: ethers.constants.AddressZero,
+//     },
+//     message: {
+//       // the owner of this stake id must be the address
+//       // that signs this object
+//       stakeId,
+//     },
+//   }),
+// }

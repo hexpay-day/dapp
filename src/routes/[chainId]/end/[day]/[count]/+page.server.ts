@@ -3,6 +3,8 @@ import * as graphql from '../../../../../graphql'
 import _ from 'lodash'
 import * as web3Store from '../../../../../stores/web3'
 import * as queries from '../../../../../stores/queries'
+import { db } from '../../../../../db'
+import { tableNames } from '../../../../../db/utils'
 
 export const ssr = false
 
@@ -35,11 +37,17 @@ export const load = async ({ params }: types.StakesLoadParams): Promise<types.St
     })
     hexstakes = hedronHexStakes
   }
+  const validHexStakeIds = _.map(hexstakes, 'stakeId')
+  const signatures = await db(tableNames.GOOD_ACCOUNT_SIGNATURE)
+    .select('*')
+    .whereIn('stakeId', validHexStakeIds)
+  const hasSignatures = new Set<string>(_.map(signatures, 'stakeId'))
   const extraInfo = new Map<number, types.ExtraInfo>(hexstakes.map(({ stakeId, owner, hdrnHsiAddress, isHdrnHsiTokenized }) => [
     +stakeId, {
-    hsiAddress: hdrnHsiAddress,
-    owner: owner.id.toLowerCase(),
-    tokenized: isHdrnHsiTokenized,
+      requestedGoodAccounting: hasSignatures.has(stakeId),
+      hsiAddress: hdrnHsiAddress,
+      owner: owner.id.toLowerCase(),
+      tokenized: isHdrnHsiTokenized,
   }]))
   const stakes = queries.toStake(all, extraInfo)
   return {

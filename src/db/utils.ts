@@ -75,26 +75,12 @@ export const insertIntoTable = async (
   }
 }
 
-export const CONTRACT = 'contract' as const
 export const NETWORK = 'network' as const
-export const BLOCK = 'block' as const
-export const TRANSACTION = 'transaction' as const
-export const ADDRESS = 'address' as const
-export const EVENT = 'event' as const
-export const LOG = 'log' as const
-export const PROGRESS = 'progress' as const
-export const STAKE = 'stake' as const
+export const GOOD_ACCOUNT_SIGNATURE = 'good_account_signature' as const
 
 export const tableNames = {
   NETWORK,
-  BLOCK,
-  TRANSACTION,
-  ADDRESS,
-  CONTRACT,
-  EVENT,
-  LOG,
-  PROGRESS,
-  STAKE,
+  GOOD_ACCOUNT_SIGNATURE,
 } as const
 
 const tn = Object.values(tableNames)
@@ -103,14 +89,7 @@ export type TableNames = typeof tn[number]
 
 export enum Tables {
   network,
-  block,
-  transaction,
-  address,
-  contract,
-  event,
-  log,
-  progress,
-  stake,
+  goodAccountSignature,
 }
 
 export type Tx = Knex | Knex.Transaction

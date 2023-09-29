@@ -10,8 +10,7 @@ export async function up(knex: Knex): Promise<void> {
     log('creating table %o', utils.tableNames.NETWORK)
     await knex.schema.withSchema(config.args.databaseSchema)
       .createTable(utils.tableNames.NETWORK, (t) => {
-        t.uuid('networkId').primary()
-        t.integer('chainId').notNullable().unsigned().index()
+        t.integer('chainId').notNullable().unsigned().primary()
         t.text('name').notNullable().index()
         t.boolean('testnet').notNullable()
         t.timestamps(true, true)
@@ -20,9 +19,7 @@ export async function up(knex: Knex): Promise<void> {
   }
 }
 
-
 export async function down(knex: Knex): Promise<void> {
   await knex.schema.withSchema(config.args.databaseSchema)
     .dropTableIfExists(utils.tableNames.NETWORK)
 }
-

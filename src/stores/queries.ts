@@ -8,22 +8,25 @@ import * as addresses from './addresses'
 import * as graphql from '../graphql'
 import { ethers } from 'ethers'
 import type { IMulticall3 } from '@hexpayday/stake-manager/artifacts/types'
+import { db } from '../db'
+import { tableNames } from '../db/utils'
 
 export const toStake = (
   all: types.StakesEndingOnDay[],
   extraInfo = new Map<number, types.ExtraInfo>(),
 ) => all.map<types.Stake>((stake) => {
   const extra = extraInfo.get(+stake.stakeId)
-  const isHedron = !!extra
+  const isHedron = !!extra && !!extra.hsiAddress
   return {
     lockedDay: +stake.startDay,
     stakedDays: +stake.stakedDays,
     stakeId: +stake.stakeId,
     isHedron: !!extra?.hsiAddress,
     tokenized: !!extra?.tokenized,
+    requestedGoodAccounting: !!extra?.requestedGoodAccounting,
     endDay: +stake.startDay + +stake.stakedDays,
     custodian: ethers.utils.getAddress(stake.stakerAddr),
-    owner: stake.owner || (ethers.utils.getAddress(isHedron ? extra.owner : stake.stakerAddr)),
+    owner: stake.owner || (ethers.utils.getAddress(isHedron ? extra.owner as string : stake.stakerAddr)),
   }
 })
 
@@ -189,11 +192,17 @@ export const loadHsiFrom = async (chainId: number, account: string) => {
   const stakeListsResults = await all.multicall.callStatic.aggregate3(stakeListCalls)
   const stakesResults = stakeListsResults.map((result) => all.hex.interface.decodeFunctionResult('stakeLists', result.returnData) as unknown as aTypes.IUnderlyingStakeable.StakeStoreStructOutput)
   const tokenizedHsiSet = new Set(tokenizedHsi)
+  const allStakeIds = _.map(stakesResults, 'stakeId')
+  const requested = await db(tableNames.GOOD_ACCOUNT_SIGNATURE)
+    .select('*')
+    .whereIn('stakeId', allStakeIds)
+  const hasRequested = new Set<string>(_.map(requested, 'stakeId'))
   const extraHsiInfo = new Map<number, types.ExtraInfo>(stakesResults.map((stake, index) => ([
   +stake.stakeId, {
     hsiAddress: allHsi[index],
     owner: account,
     tokenized: tokenizedHsiSet.has(allHsi[index]),
+    requestedGoodAccounting: hasRequested.has(`${stake.stakeId}`),
   }])))
   return _.flatMap(stakesResults, (stake, index) => (
     toStake(stakesFromResults(account, allHsi[index], [stake], tokenizedHsiSet.has(allHsi[index])), extraHsiInfo)
@@ -204,24 +213,36 @@ export const getStakesFromChainUnderAccount = async (chainId: number, account: s
   const [
     resultsFromAccount,
     resultsFromStakeManager,
-    resultsFromExistingStakeManager,
+    // resultsFromExistingStakeManager,
     hsis,
   ] = await Promise.all([
     loadStakesFrom(chainId, account),
     loadStakesFrom(chainId, addresses.StakeManager).then(onlyOwnedBy(chainId, account, addresses.StakeManager)),
-    loadStakesFrom(chainId, addresses.ExistingStakeManager).then(onlyOwnedBy(chainId, account, addresses.ExistingStakeManager)),
+    // loadStakesFrom(chainId, addresses.ExistingStakeManager).then(onlyOwnedBy(chainId, account, addresses.ExistingStakeManager)),
     loadHsiFrom(chainId, account),
   ])
-  // console.log(
-  //   stakesFromResults(account, account, resultsFromAccount),
-  //   stakesFromResults(account, addresses.StakeManager, resultsFromStakeManager),
-  //   stakesFromResults(account, addresses.ExistingStakeManager, resultsFromExistingStakeManager),
-  //   hsis,)
+  const stakeIds = _.flatMap([
+    resultsFromAccount,
+    resultsFromStakeManager,
+    // resultsFromExistingStakeManager,
+  ], (list) => _.map(list, 'stakeId'))
+  const requested = await db(tableNames.GOOD_ACCOUNT_SIGNATURE)
+    .select('*')
+    .whereIn('stakeId', stakeIds)
+  const hasRequested = new Set<string>(_.map(requested, 'stakeId'))
+  const extraData = new Map<number, types.ExtraInfo>(stakeIds.map((stakeId) => ([
+    stakeId, {
+      hsiAddress: null,
+      owner: null,
+      tokenized: false,
+      requestedGoodAccounting: hasRequested.has(`${stakeId}`),
+    }
+  ])))
   return ([] as types.Stake[])
     .concat(
-      toStake(stakesFromResults(account, account, resultsFromAccount)),
-      toStake(stakesFromResults(account, addresses.StakeManager, resultsFromStakeManager)),
-      toStake(stakesFromResults(account, addresses.ExistingStakeManager, resultsFromExistingStakeManager)),
+      toStake(stakesFromResults(account, account, resultsFromAccount), extraData),
+      toStake(stakesFromResults(account, addresses.StakeManager, resultsFromStakeManager), extraData),
+      // toStake(stakesFromResults(account, addresses.ExistingStakeManager, resultsFromExistingStakeManager)),
       hsis,
     )
 }

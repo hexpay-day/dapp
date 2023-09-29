@@ -10,6 +10,7 @@ export type Stake = {
   isHedron: boolean;
   tokenized: boolean;
   stakeId: number;
+  requestedGoodAccounting: boolean;
 }
 
 export enum TimelineTypes {
@@ -18,6 +19,7 @@ export enum TimelineTypes {
   RESTART_STAKE = 'Restart Stake',
   GOOD_ACCOUNT = 'Good Account',
   DEPOSIT_HSI = 'Deposit Hsi',
+  GOOD_ACCOUNT_SIGN = 'Request Good Account',
 }
 
 export type StakeAction = {
@@ -95,9 +97,10 @@ export type HsiStatusResponse = {
 }
 
 export type ExtraInfo = {
-  hsiAddress: string;
-  owner: string;
+  hsiAddress: string | null;
+  owner: string | null;
   tokenized: boolean;
+  requestedGoodAccounting: boolean;
 }
 
 export type StakeInfo = {

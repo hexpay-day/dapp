@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { setting } from "../stores/settings";
-
-  export let value
+	// import type { EncodableSettings } from "@hexpayday/stake-manager/artifacts/types";
+	// import { setting } from "../stores/settings";
+	// const settings = $setting
+  // export let value!: EncodableSettings.SettingsStruct
 </script>
 
-<div class="flex"></div>
+<!-- <div class="flex">{$setting.copyIterations}</div> -->
