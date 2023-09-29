@@ -43,6 +43,7 @@ export const makeConfig = (overrides: Partial<Knex.Config>): Knex.Config => ({
   ...overrides,
 })
 
+
 export const config = makeConfig({
   connection: {
     connectionString: configuration.args.databaseUrl,
