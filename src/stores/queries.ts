@@ -259,26 +259,26 @@ export const getAllUnderAccount = async (chainId: number, account: string) => {
   if (!client) {
     // write a multicall to get this data
     if (chainId === 31337) {
-      return await getStakesFromChainUnderAccount(chainId, account)
     }
     throw new Error('chain not supported')
   }
-  const allInDay: types.StakesEndingOnDay[] = []
-  let hasMore = false
-  const limit = 100
-  do {
-    // only does hex - still need stake manager
-    const response = await client.request<types.StakesEndingOnDayResponse>(graphql.queries.STAKES_UNDER_ACCOUNT, {
-      account,
-    })
-    const { stakeStarts } = response
-    allInDay.push(...stakeStarts)
-    hasMore = stakeStarts.length === limit
-  } while (hasMore);
-  return toStake(allInDay.map((stake) => ({
-    ...stake,
-    owner: account,
-  })))
+  return await getStakesFromChainUnderAccount(chainId, account)
+  // const allInDay: types.StakesEndingOnDay[] = []
+  // let hasMore = false
+  // const limit = 100
+  // do {
+  //   // only does hex - still need stake manager
+  //   const response = await client.request<types.StakesEndingOnDayResponse>(graphql.queries.STAKES_UNDER_ACCOUNT, {
+  //     account,
+  //   })
+  //   const { stakeStarts } = response
+  //   allInDay.push(...stakeStarts)
+  //   hasMore = stakeStarts.length === limit
+  // } while (hasMore);
+  // return toStake(allInDay.map((stake) => ({
+  //   ...stake,
+  //   owner: account,
+  // })))
 }
 
 const optionsByAddress: LRUCache.Options<string, types.Stake[], any> = {
