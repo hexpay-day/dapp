@@ -10,6 +10,7 @@ import { getByChainId } from '../../../../stores/providers';
 import { db } from '../../../../db';
 import { tableNames } from '../../../../db/utils';
 import { ethers } from 'ethers';
+import { args } from '../../../../config';
 
 export const load = async ({ params }: { params: { chainId: string; account: string; } }) => {
   const chainId = +params.chainId
@@ -83,7 +84,7 @@ export const actions: Actions = {
       validStart: new Date(request.validStart * 1_000),
       validUntil: new Date(request.validUntil * 1_000),
     }
-    await db(tableNames.GOOD_ACCOUNT_SIGNATURE)
+    await db(`${args.databaseSchema}.${tableNames.GOOD_ACCOUNT_SIGNATURE}`)
       .insert(row)
       .onConflict(['stakeId'])
       .merge(['validUntil', 'validStart', 'signature', 'account'])

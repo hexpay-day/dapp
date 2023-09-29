@@ -10,6 +10,7 @@ import { ethers } from 'ethers'
 import type { IMulticall3 } from '@hexpayday/stake-manager/artifacts/types'
 import { db } from '../db'
 import { tableNames } from '../db/utils'
+import { args } from '../config'
 
 export const toStake = (
   all: types.StakesEndingOnDay[],
@@ -193,7 +194,7 @@ export const loadHsiFrom = async (chainId: number, account: string) => {
   const stakesResults = stakeListsResults.map((result) => all.hex.interface.decodeFunctionResult('stakeLists', result.returnData) as unknown as aTypes.IUnderlyingStakeable.StakeStoreStructOutput)
   const tokenizedHsiSet = new Set(tokenizedHsi)
   const allStakeIds = _.map(stakesResults, 'stakeId')
-  const requested = await db(tableNames.GOOD_ACCOUNT_SIGNATURE)
+  const requested = await db(`${args.databaseSchema}.${tableNames.GOOD_ACCOUNT_SIGNATURE}`)
     .select('*')
     .whereIn('stakeId', allStakeIds)
   const hasRequested = new Set<string>(_.map(requested, 'stakeId'))
@@ -226,7 +227,7 @@ export const getStakesFromChainUnderAccount = async (chainId: number, account: s
     resultsFromStakeManager,
     // resultsFromExistingStakeManager,
   ], (list) => _.map(list, 'stakeId'))
-  const requested = await db(tableNames.GOOD_ACCOUNT_SIGNATURE)
+  const requested = await db(`${args.databaseSchema}.${tableNames.GOOD_ACCOUNT_SIGNATURE}`)
     .select('*')
     .whereIn('stakeId', stakeIds)
   const hasRequested = new Set<string>(_.map(requested, 'stakeId'))

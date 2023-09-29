@@ -8,7 +8,7 @@ export const args = yargs().options({
   databaseSchema: {
     type: 'string',
     require: true,
-    default: 'public',
+    default: 'hexpayday',
   },
   hashSeed: {
     type: 'string',

@@ -5,6 +5,7 @@ import * as web3Store from '../../../../../stores/web3'
 import * as queries from '../../../../../stores/queries'
 import { db } from '../../../../../db'
 import { tableNames } from '../../../../../db/utils'
+import { args } from '../../../../../config'
 
 export const ssr = false
 
@@ -38,7 +39,7 @@ export const load = async ({ params }: types.StakesLoadParams): Promise<types.St
     hexstakes = hedronHexStakes
   }
   const validHexStakeIds = _.map(hexstakes, 'stakeId')
-  const signatures = await db(tableNames.GOOD_ACCOUNT_SIGNATURE)
+  const signatures = await db(`${args.databaseSchema}.${tableNames.GOOD_ACCOUNT_SIGNATURE}`)
     .select('*')
     .whereIn('stakeId', validHexStakeIds)
   const hasSignatures = new Set<string>(_.map(signatures, 'stakeId'))

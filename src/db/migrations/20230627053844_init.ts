@@ -48,7 +48,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;`)
   await knex.raw(`SET enable_seqscan = 'OFF';`)
-  await knex.raw(`ALTER DATABASE hexpayday SET statement_timeout = '60s';`)
+  // await knex.raw(`ALTER DATABASE hexpayday SET statement_timeout = '60s';`).catch((err) => {})
 }
 
 export async function down(knex: Knex): Promise<void> {
