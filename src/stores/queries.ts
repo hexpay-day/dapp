@@ -191,7 +191,7 @@ export const loadHsiFrom = async (chainId: number, account: string) => {
     all.hex.interface.encodeFunctionData('stakeLists', [hsi, 0])
   ))
   const stakeListsResults = await all.multicall.callStatic.aggregate3(stakeListCalls)
-  const stakesResults = stakeListsResults.map((result) => all.hex.interface.decodeFunctionResult('stakeLists', result.returnData) as unknown as aTypes.IUnderlyingStakeable.StakeStoreStructOutput)
+  const stakesResults = stakeListsResults.map((result) => (all.hex.interface.decodeFunctionResult('stakeLists', result.returnData))[0] as unknown as aTypes.IUnderlyingStakeable.StakeStoreStructOutput)
   const tokenizedHsiSet = new Set(tokenizedHsi)
   const allStakeIds = _.map(stakesResults, 'stakeId')
   const requested = await db(`${args.databaseSchema}.${tableNames.GOOD_ACCOUNT_SIGNATURE}`)

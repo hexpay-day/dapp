@@ -12,7 +12,9 @@
 <div class="container m-auto flex justify-between max-w-5xl h-14 items-center p-2">
   <div class="flex items-center">
     <Settings />
-    <NavigatingIndicator />
+    <div class="mx-2">
+      <NavigatingIndicator />
+    </div>
   </div>
   <div class="gap-2 my-1 flex">
     {#if $page.data.chainId}
