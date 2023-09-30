@@ -756,9 +756,9 @@
   integrity sha512-mB9oAsNCm9aM3/SOv4YtBMqZbYj10R7dkq8byBqxGY/ncFwhf2oQzMV+LCRlWoDSEBJ3COiR1yeDvMtsoOsuFQ==
 
 "@hexpayday/stake-manager@^1.0.12":
-  version "1.0.12"
-  resolved "https://registry.yarnpkg.com/@hexpayday/stake-manager/-/stake-manager-1.0.12.tgz#e71fbbf51a5d423d1142e7e6c642c98cdf16102c"
-  integrity sha512-ply0r1uYPdTkG/iXmiCvznlzXMxOx2l4EnfgmACVQaNItUNSHm5gsSh8BPVf0KMpvusU/TlmF90Bc3S7nZNs4Q==
+  version "1.0.15"
+  resolved "https://registry.yarnpkg.com/@hexpayday/stake-manager/-/stake-manager-1.0.15.tgz#4f83a4234acf546aa1c738910faf9eb4ce07d8f5"
+  integrity sha512-Jw/NXbbgkQ1u+DuaNL1EqN1wa58jP++DpPqs/AfJt32/DrV9k492h5lxitWyH5Vlqj4B7hIuCYs11yhAuuws7Q==
 
 "@humanwhocodes/config-array@^0.11.10":
   version "0.11.10"
