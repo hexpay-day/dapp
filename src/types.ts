@@ -14,12 +14,14 @@ export type Stake = {
 }
 
 export enum TimelineTypes {
-  UPDATE = 'Update Stake',
+  UPDATE = 'Update Settings',
   END = 'End Stake',
+  START = 'Start Stake',
   RESTART_STAKE = 'Restart Stake',
-  GOOD_ACCOUNT = 'Good Account',
   DEPOSIT_HSI = 'Deposit Hsi',
-  GOOD_ACCOUNT_SIGN = 'Request Good Account',
+  WITHDRAW_HSI = 'Withdraw Hsi',
+  TOKENIZE_HSI = 'Tokenize Hsi',
+  GOOD_ACCOUNT = 'Good Account',
 }
 
 export type StakeAction = {
@@ -138,6 +140,9 @@ export enum TaskType {
   approval = 'approval',
   start = 'start',
   depositHsi = 'depositHsi',
+  withdrawHsi = 'withdrawHsi',
+  goodAccount = 'goodAccount',
+  endStake = 'endStake',
 }
 
 // export type TaskType = keyof taskTypes
@@ -155,7 +160,7 @@ export type StakeStartStep = {
   for: string;
   lockedDays: string;
   settings: EncodableSettings.SettingsStruct;
-  contract: string;
+  contract: string; // TODO: convert to ContractType when possible
   fundingOrigin: FundingOrigin;
   useAdvancedSettings: boolean;
 }
@@ -168,17 +173,27 @@ export type ApprovalStep = {
 
 export type DepositHsiStep = {
   stake: Stake;
+  tokenId: bigint;
   settings: EncodableSettings.SettingsStruct;
+  settingsEncoded: bigint;
 }
 
-export type Tasks = ApprovalStep | StakeStartStep | DepositHsiStep;
+export type WithdrawStep = {
+  stake: Stake;
+}
+
+export type GoodAccountStep = {
+  stake: Stake;
+}
+
+export type Tasks = ApprovalStep | StakeStartStep | DepositHsiStep | GoodAccountStep | WithdrawStep;
 
 export enum ContractType {
   Invalid = 'Invalid',
   Hex = 'Hex',
-  ExistingStakeManager ='ExistingStakeManager',
-  StakeManager ='StakeManager',
-  IsolatedStakeManagerFactory ='IsolatedStakeManagerFactory',
+  ExistingStakeManager = 'ExistingStakeManager',
+  StakeManager = 'StakeManager',
+  IsolatedStakeManagerFactory = 'IsolatedStakeManagerFactory',
 }
 
 export type Step<T extends Tasks = any> = {

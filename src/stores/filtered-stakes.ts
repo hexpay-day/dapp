@@ -7,8 +7,8 @@ import { today, DAY, launchDate } from './day'
 import { renderHedronIcon } from '../stores/image';
 import type * as types from '../types'
 
-export const iconExpanded = `&#x25B2;`
-export const iconExpand = `&#x25BC;`
+export const iconExpanded = `<span class="inline-block w-5 text-center ml-auto">&#x25B2;</span>`
+export const iconExpand = `<span class="inline-block w-5 text-center ml-auto">&#x25BC;</span>`
 
 export const renderIcon = (v: types.Stake) => {
   return v.isHedron ? renderHedronIcon(v.custodian) : (

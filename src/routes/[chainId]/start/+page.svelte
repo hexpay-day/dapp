@@ -227,7 +227,10 @@
     {/if}
     <div class="flex justify-end col-span-{$useAdvancedSettings ? '2' : '1'} items-end flex-row pt-5">
       <CheckoutButton disabled={!$amountIsValid} action={async () => {
-        addToSequence(TaskType.start, settings, true)
+        addToSequence(TaskType.start, settings, {
+          // we should default to optimizing these calls
+          optimize: true,
+        })
         resetData()
       }} />
     </div>

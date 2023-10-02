@@ -11,41 +11,12 @@ import type { IMulticall3 } from '@hexpayday/stake-manager/artifacts/types'
 import { db } from '../db'
 import { tableNames } from '../db/utils'
 import { args } from '../config'
-
-export const toStake = (
-  all: types.StakesEndingOnDay[],
-  extraInfo = new Map<number, types.ExtraInfo>(),
-) => all.map<types.Stake>((stake) => {
-  const extra = extraInfo.get(+stake.stakeId)
-  const isHedron = !!extra && !!extra.hsiAddress
-  return {
-    lockedDay: +stake.startDay,
-    stakedDays: +stake.stakedDays,
-    stakeId: +stake.stakeId,
-    isHedron: !!extra?.hsiAddress,
-    tokenized: !!extra?.tokenized,
-    requestedGoodAccounting: !!extra?.requestedGoodAccounting,
-    endDay: +stake.startDay + +stake.stakedDays,
-    custodian: ethers.utils.getAddress(stake.stakerAddr),
-    owner: stake.owner || (ethers.utils.getAddress(isHedron ? extra.owner as string : stake.stakerAddr)),
-  }
-})
+import * as rpcQueries from './rpc-queries'
 
 export const getStakesFromChain = async (chainId: number, day: number) => {
   const all = contracts.all(chainId, null)
-  const stakeCount = await all.hex.stakeCount(addresses.StakeManager)
-  const calls = _.range(0, stakeCount.toNumber()).map((index) => ({
-    target: addresses.Hex,
-    allowFailure: false,
-    value: 0,
-    callData: all.hex.interface.encodeFunctionData('stakeLists', [
-      addresses.StakeManager,
-      index,
-    ]),
-  }))
-  const results = await all.multicall.callStatic.aggregate3(calls)
-  const stakes = results.map((result) => {
-    const stake = all.hex.interface.decodeFunctionResult('stakeLists', result.returnData) as unknown as aTypes.IUnderlyingStakeable.StakeStoreStructOutput
+  const stakeResults = await rpcQueries.loadStakeLists(chainId, addresses.StakeManager)
+  const stakes = stakeResults.map((stake) => {
     return {
       stakeId: `${stake.stakeId}`,
       startDay: `${stake.lockedDay}`,
@@ -72,26 +43,6 @@ export const getStakesFromChain = async (chainId: number, day: number) => {
 
 export const limit = 10_000
 
-export const loadStakesFrom = async (chainId: number, account: string) => {
-  const all = contracts.all(chainId, null)
-  const stakeCount = await all.hex.stakeCount(account)
-  const calls = _.range(0, stakeCount.toNumber()).map((index) => ({
-    target: addresses.Hex,
-    allowFailure: false,
-    value: 0,
-    callData: all.hex.interface.encodeFunctionData('stakeLists', [
-      account,
-      index,
-    ]),
-  }))
-  const stakeChunks = await Promise.all(_.chunk(calls, limit).map((clls) => (
-    all.multicall.callStatic.aggregate3(clls)
-  )))
-  return _.flatten(stakeChunks).map((result) => (
-    all.hex.interface.decodeFunctionResult('stakeLists', result.returnData) as unknown as aTypes.IUnderlyingStakeable.StakeStoreStructOutput
-  ))
-}
-
 export const onlyOwnedBy = (chainId: number, account: string, target: string) => async (stakes: aTypes.IUnderlyingStakeable.StakeStoreStructOutput[]) => {
   const all = contracts.all(chainId, null)
   const calls = stakes.map((stake) => ({
@@ -116,21 +67,6 @@ export const onlyOwnedBy = (chainId: number, account: string, target: string) =>
     .value()
 }
 
-export const stakesFromResults = (account: string, stakerAddr: string, list: aTypes.IUnderlyingStakeable.StakeStoreStructOutput[], tokenized = false) => {
-  return list.map((stake) => {
-    return {
-      stakeId: `${stake.stakeId}`,
-      startDay: `${stake.lockedDay}`,
-      stakedDays: `${stake.stakedDays}`,
-      endDay: `${stake.lockedDay + stake.stakedDays}`,
-      stakerAddr,
-      stakeEnd: null,
-      owner: account,
-      tokenized,
-    } as types.StakesEndingOnDay
-  })
-}
-
 export const loadStakesFromPerpetuals = async (chainId: number) => {
   const perps = [...addresses.perpetuals.values()]
   const all = contracts.all(chainId, null)
@@ -140,58 +76,17 @@ export const loadStakesFromPerpetuals = async (chainId: number) => {
     if (!stake) return
     return [perp, stake] as [string, aTypes.IUnderlyingStakeable.StakeStoreStructOutput]
   })))
-  return _(stakes).flatMap(([perp, stake]) => toStake(stakesFromResults(
+  return _(stakes).flatMap(([perp, stake]) => rpcQueries.toStake(rpcQueries.stakesFromResults(
     perp, perp, [stake]
   ))).value()
 }
 
 export const loadHsiFrom = async (chainId: number, account: string) => {
-  const createCall = (target: string) => (callData: string) => ({
-    target,
-    value: 0,
-    allowFailure: false,
-    callData,
-  })
-  const callHsim = createCall(addresses.HSIM)
-  const callHex = createCall(addresses.Hex)
-  const all = contracts.all(chainId, null)
-  const countCalls = [
-    callHsim(all.hsim.interface.encodeFunctionData('hsiCount', [account])),
-    callHsim(all.hsim.interface.encodeFunctionData('balanceOf', [account])),
-  ]
-  const countResults = await all.multicall.callStatic.aggregate3(countCalls)
-  const [hsiCount, tokenCount] = countResults.map((result) => BigInt(result.returnData))
-  const hsiStakeCalls = _.range(0, Number(hsiCount)).map((index) => (
-    callHsim(all.hsim.interface.encodeFunctionData('hsiLists', [
-      account,
-      index,
-    ]))
-  ))
-  const tokenCalls = _.range(0, Number(tokenCount)).map((index) => (
-    callHsim(all.hsim.interface.encodeFunctionData('tokenOfOwnerByIndex', [
-      account,
-      index,
-    ]))
-  ))
-  const allCalls = hsiStakeCalls.concat(tokenCalls)
-  const allResults = await all.multicall.callStatic.aggregate3(allCalls)
-  const [hsiStakeResults, tokenResults] = _.partition(allResults, (a: any, index: any) => index < hsiStakeCalls.length) as [
-    IMulticall3.ResultStructOutput[],
-    IMulticall3.ResultStructOutput[],
-  ]
-  const hsiStakes = hsiStakeResults.map((result) => ethers.utils.getAddress(`0x${result.returnData.slice(-40)}`))
-  const tokenIds = tokenResults.map((result) => BigInt(result.returnData))
-  const tokenHsiCalls = tokenIds.map((tokenId) => (
-    callHsim(all.hsim.interface.encodeFunctionData('hsiToken', [tokenId]))
-  ))
-  const tokenHsiResults = tokenHsiCalls ? await all.multicall.callStatic.aggregate3(tokenHsiCalls) : [] as IMulticall3.ResultStructOutput[]
-  const tokenizedHsi = tokenHsiResults.map((result) => ethers.utils.getAddress(`0x${result.returnData.slice(-40)}`))
-  const allHsi = hsiStakes.concat(tokenizedHsi)
-  const stakeListCalls = allHsi.map((hsi) => callHex(
-    all.hex.interface.encodeFunctionData('stakeLists', [hsi, 0])
-  ))
-  const stakeListsResults = await all.multicall.callStatic.aggregate3(stakeListCalls)
-  const stakesResults = stakeListsResults.map((result) => (all.hex.interface.decodeFunctionResult('stakeLists', result.returnData))[0] as unknown as aTypes.IUnderlyingStakeable.StakeStoreStructOutput)
+  const {
+    stakes: stakesResults,
+    all: allHsi,
+    tokenizedAddresses: tokenizedHsi,
+  } = await rpcQueries.loadHsiFrom(chainId, account)
   const tokenizedHsiSet = new Set(tokenizedHsi)
   const allStakeIds = _.map(stakesResults, 'stakeId')
   const requested = await db(`${args.databaseSchema}.${tableNames.GOOD_ACCOUNT_SIGNATURE}`)
@@ -206,7 +101,7 @@ export const loadHsiFrom = async (chainId: number, account: string) => {
     requestedGoodAccounting: hasRequested.has(`${stake.stakeId}`),
   }])))
   return _.flatMap(stakesResults, (stake, index) => (
-    toStake(stakesFromResults(account, allHsi[index], [stake], tokenizedHsiSet.has(allHsi[index])), extraHsiInfo)
+    rpcQueries.toStake(rpcQueries.stakesFromResults(account, allHsi[index], [stake], tokenizedHsiSet.has(allHsi[index])), extraHsiInfo)
   ))
 }
 
@@ -214,18 +109,21 @@ export const getStakesFromChainUnderAccount = async (chainId: number, account: s
   const [
     resultsFromAccount,
     resultsFromStakeManager,
-    // resultsFromExistingStakeManager,
-    hsis,
-  ] = await Promise.all([
-    loadStakesFrom(chainId, account),
-    loadStakesFrom(chainId, addresses.StakeManager).then(onlyOwnedBy(chainId, account, addresses.StakeManager)),
-    // loadStakesFrom(chainId, addresses.ExistingStakeManager).then(onlyOwnedBy(chainId, account, addresses.ExistingStakeManager)),
+    resultsFromExistingStakeManager,
+    hsiResults,
+  ] = await Promise.allSettled([
+    rpcQueries.loadStakeLists(chainId, account),
+    rpcQueries.loadStakeLists(chainId, addresses.StakeManager).then(onlyOwnedBy(chainId, account, addresses.StakeManager)),
+    loadHsiFrom(chainId, addresses.ExistingStakeManager),
     loadHsiFrom(chainId, account),
   ])
+  const accountResults = resultsFromAccount.status === 'fulfilled' ? resultsFromAccount.value : []
+  const stakeManagerResults = resultsFromStakeManager.status === 'fulfilled' ? resultsFromStakeManager.value : []
+  const existingStakeManagerResults = resultsFromExistingStakeManager.status === 'fulfilled' ? resultsFromExistingStakeManager.value : []
+  const hsis = hsiResults.status === 'fulfilled' ? hsiResults.value : []
   const stakeIds = _.flatMap([
-    resultsFromAccount,
-    resultsFromStakeManager,
-    // resultsFromExistingStakeManager,
+    accountResults,
+    stakeManagerResults,
   ], (list) => _.map(list, 'stakeId'))
   const requested = await db(`${args.databaseSchema}.${tableNames.GOOD_ACCOUNT_SIGNATURE}`)
     .select('*')
@@ -241,9 +139,9 @@ export const getStakesFromChainUnderAccount = async (chainId: number, account: s
   ])))
   return ([] as types.Stake[])
     .concat(
-      toStake(stakesFromResults(account, account, resultsFromAccount), extraData),
-      toStake(stakesFromResults(account, addresses.StakeManager, resultsFromStakeManager), extraData),
-      // toStake(stakesFromResults(account, addresses.ExistingStakeManager, resultsFromExistingStakeManager)),
+      rpcQueries.toStake(rpcQueries.stakesFromResults(account, account, accountResults), extraData),
+      rpcQueries.toStake(rpcQueries.stakesFromResults(account, addresses.StakeManager, stakeManagerResults), extraData),
+      existingStakeManagerResults,
       hsis,
     )
 }
@@ -277,13 +175,13 @@ export const getAllInDay = async (chainId: number, day: number) => {
 }
 
 export const getAllUnderAccount = async (chainId: number, account: string) => {
-  const client = graphql.hexClients.get(chainId)
-  if (!client) {
-    // write a multicall to get this data
-    if (chainId === 31337) {
-    }
-    throw new Error('chain not supported')
-  }
+  // const client = graphql.hexClients.get(chainId)
+  // if (!client) {
+  //   // write a multicall to get this data
+  //   if (chainId === 31337) {
+  //   }
+  //   throw new Error('chain not supported')
+  // }
   return await getStakesFromChainUnderAccount(chainId, account)
   // const allInDay: types.StakesEndingOnDay[] = []
   // let hasMore = false
@@ -297,7 +195,7 @@ export const getAllUnderAccount = async (chainId: number, account: string) => {
   //   allInDay.push(...stakeStarts)
   //   hasMore = stakeStarts.length === limit
   // } while (hasMore);
-  // return toStake(allInDay.map((stake) => ({
+  // return rpcQueries.toStake(allInDay.map((stake) => ({
   //   ...stake,
   //   owner: account,
   // })))
@@ -305,14 +203,14 @@ export const getAllUnderAccount = async (chainId: number, account: string) => {
 
 const optionsByAddress: LRUCache.Options<string, types.Stake[], any> = {
   ttlAutopurge: true,
-  ttl: 1_000 * 60 * 5,
+  ttl: 1_000 * 20,
   fetchMethod: async (key) => {
-    const [chainId, day] = key.split('-')
-    if (day === 'perpetuals') {
+    const [chainId, account] = key.split('-')
+    if (account === 'perpetuals') {
       return await loadStakesFromPerpetuals(+chainId)
     }
-    if (ethers.utils.isAddress(day)) {
-      return await getAllUnderAccount(+chainId, day)
+    if (ethers.utils.isAddress(account)) {
+      return await getAllUnderAccount(+chainId, account)
     }
     return []
   },
@@ -322,7 +220,7 @@ export const cacheByAddress = new LRUCache(optionsByAddress)
 
 const optionsByDay: LRUCache.Options<string, types.StakesEndingOnDay[], any> = {
   ttlAutopurge: true,
-  ttl: 1_000 * 60 * 5,
+  ttl: 1_000 * 20,
   fetchMethod: async (key) => {
     const [chainId, day] = key.split('-')
     return await getAllInDay(+chainId, +day)

@@ -15,6 +15,8 @@
 	import { onMount } from 'svelte';
   import FilterPath from './FilterPath.svelte'
 	import { IconAtom2, IconFlame, IconSearch, IconShoppingCart } from '@tabler/icons-svelte';
+	import { ethers } from 'ethers';
+  const { address } = web3Store
 
   onMount(async () => {
     if ($currentDay) {
@@ -28,7 +30,7 @@
   const navTo = (type: string) => {
     const url = type === 'end' ? `/${$chainId}/end/${$currentDay}/${defaultOffsetDays}`
       : type === 'start' ? `/${$chainId}/start/`
-      : type === 'maintain' ? `/${$chainId}/maintain/`
+      : type === 'maintain' ? `/${$chainId}/maintain/${$address === ethers.constants.AddressZero ? '' : $address}`
       : type === 'checkout' ? `/${$chainId}/checkout/` : ''
     if (!url) return
     goto(url)

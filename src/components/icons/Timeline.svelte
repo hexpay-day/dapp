@@ -4,6 +4,7 @@
     IconFlame,
     IconOutbound,
     IconChevronsRight,
+    IconBuildingBank,
   } from '@tabler/icons-svelte'
   export let type = ''
   let className = 'w-4 h-4 text-primary-600 dark:text-primary-400'
@@ -18,5 +19,7 @@
   <IconOutbound class={className} />
   {:else if type === 'chevronsright'}
   <IconChevronsRight class={className} />
+  {:else if type === 'deposit' || type === 'withdraw'}
+  <IconBuildingBank class={className} />
   {/if}
 </span>

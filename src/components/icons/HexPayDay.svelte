@@ -1,0 +1,1 @@
+<img src="/logo.png" alt="a cluster of hexagons with different colors" height="20" width="20" />

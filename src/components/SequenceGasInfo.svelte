@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Toggle } from "flowbite-svelte";
+  import { Spinner, Toggle } from "flowbite-svelte";
 	import type { Step } from "../types";
 	import { updateSequenceItem, estimateGas, defaultAccessListResponse } from "../stores/sequence";
 	import { numberWithCommas } from "../stores/web3";
@@ -11,6 +11,7 @@
       optimize: (e.target as HTMLInputElement)?.checked,
     })
   }
+  let showSpinner = true
   let estimate = {
     gasUsed: 0n,
     optimized: {
@@ -20,6 +21,7 @@
   if (isFirst) {
     estimateGas(step).then((used) => {
       estimate = used
+      showSpinner = false
     })
   }
   // disabled only for approval so far because it is derived
@@ -39,6 +41,11 @@
     </span>
     {/if}
     <span class="flex mx-1">gas</span>
+    {#if showSpinner}
+    <div class="flex px-2">
+      <Spinner size="6" />
+    </div>
+    {/if}
   </span>
 </div>
 {/if}

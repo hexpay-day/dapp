@@ -2,115 +2,336 @@
   import * as types from '../types'
   import classnames from 'classnames'
 	import {
-    IconChevronsRight,
-  } from "@tabler/icons-svelte";
-  import * as filteredStakesStore from '../stores/filtered-stakes'
-  import * as web3Store from '../stores/web3'
+    IconChevronsRight, IconQuestionMark,
+  } from "@tabler/icons-svelte"
+  import { queryParameters, ssp } from "sveltekit-search-params"
+  import * as rpcQueries from '../stores/rpc-queries'
 	import {
     Button,
     Dropdown,
     DropdownItem,
-  } from "flowbite-svelte";
-	import CheckoutButton from './CheckoutButton.svelte';
-	import StakeSettings from './StakeSettings.svelte';
-	import MaintenanceSetting from './MaintenanceSetting.svelte';
-	import SignForGoodAccount from './SignForGoodAccount.svelte';
-	import { addToSequence } from '../stores/sequence';
-	import * as settingsStore from '../stores/settings';
-	import { TaskType, type TimelineTypes } from '../types';
-	// import type { EncodableSettings } from '@hexpayday/stake-manager/artifacts/types';
-	// import Timeline from './icons/Timeline.svelte';
-
-  const settings = settingsStore.setting
+  } from "flowbite-svelte"
+	import CheckoutButton from './CheckoutButton.svelte'
+	import HexPayDayIcon from './icons/HexPayDay.svelte'
+	import MaintenanceSetting from './MaintenanceSetting.svelte'
+	import SignForGoodAccount from './SignForGoodAccount.svelte'
+	import DoTokenizeHsi from './DoTokenizeHsi.svelte'
+	import DoDepositHsiApproval from './DoDepositHsiApproval.svelte'
+	import { addToSequence, existsInSequence, removeFromSequence } from '../stores/sequence'
+	import * as addresses from '../stores/addresses'
+	import * as web3Store from '../stores/web3'
+	import * as contracts from '../stores/contracts'
+	import { TaskType, type TimelineTypes } from '../types'
+	import { ethers } from "ethers"
+	import ConnectWallet from "./ConnectWallet.svelte"
+	import { renderIcon } from '../stores/filtered-stakes';
+  const { chainId, address, connected } = web3Store
   export let stake!: types.Stake
+  export let options!: types.TimelineTypes[]
+  $: existingStakeManagerIsOwner = ethers.utils.getAddress(stake.owner) === addresses.ExistingStakeManager
+  let dropdownOpen = false
+  let showCheckout = false
+  let buttonDisabled = false
+  let checkoutReversable = false
   const { TimelineTypes } = types
-  $: address = web3Store.address
-  $: console.log(stake)
   const defaultClass = (disabled: boolean) => (
     classnames('font-medium py-2 pl-4 pr-6 text-md hover:bg-gray-100 dark:hover:bg-gray-600 w-full text-left flex', {
       'cursor-not-allowed': disabled,
     })
   )
-  let timelineType!: types.TimelineTypes
-  if (stake.tokenized) {
-    timelineType = TimelineTypes.DEPOSIT_HSI
+  const selectTokenizeHsi = () => {
+    showCheckout = true
+    dropdownOpen = false
+    storage.update(($storage) => ({
+      ...$storage,
+      selected: TimelineTypes.TOKENIZE_HSI,
+    }))
+    buttonDisabled = true
   }
-  timelineType = TimelineTypes.GOOD_ACCOUNT
-  $: notEndable = !filteredStakesStore.isEndable(stake)
-  $: depositingUntokenized = timelineType === TimelineTypes.DEPOSIT_HSI && !stake.tokenized
+  const selectDepositHsi = () => {
+    showCheckout = true
+    dropdownOpen = false
+    storage.update(($storage) => ({
+      ...$storage,
+      selected: TimelineTypes.DEPOSIT_HSI,
+    }))
+    buttonDisabled = false
+    checkoutReversable = existsInSequence({
+      type: taskTypeFromTimelineType(TimelineTypes.DEPOSIT_HSI),
+      task: {
+        stake,
+      },
+    })
+  }
+  const selectWithdrawHsi = () => {
+    showCheckout = true
+    dropdownOpen = false
+    storage.update(($storage) => ({
+      ...$storage,
+      selected: TimelineTypes.WITHDRAW_HSI,
+    }))
+    buttonDisabled = false
+    checkoutReversable = existsInSequence({
+      type: taskTypeFromTimelineType(TimelineTypes.WITHDRAW_HSI),
+      task: {
+        stake,
+      },
+    })
+  }
+  const selectUpdateStake = () => {
+    showCheckout = true
+    dropdownOpen = false
+    storage.update(($storage) => ({
+      ...$storage,
+      selected: TimelineTypes.UPDATE,
+    }))
+    buttonDisabled = true
+  }
+  const selectGoodAccount = () => {
+    showCheckout = true
+    dropdownOpen = false
+    storage.update(($storage) => ({
+      ...$storage,
+      selected: TimelineTypes.GOOD_ACCOUNT,
+    }))
+    buttonDisabled = false
+    checkoutReversable = existsInSequence({
+      type: taskTypeFromTimelineType(TimelineTypes.GOOD_ACCOUNT),
+      task: {
+        stake,
+      },
+    })
+  }
+  const selectEndStake = () => {
+    showCheckout = true
+    dropdownOpen = false
+    storage.update(($storage) => ({
+      ...$storage,
+      selected: TimelineTypes.END,
+    }))
+    buttonDisabled = !ownerCanEndFromSigner && !ownerIsPerpetual
+    checkoutReversable = existsInSequence({
+      type: taskTypeFromTimelineType(TimelineTypes.END),
+      task: {
+        stake,
+      },
+    })
+  }
+  const selectRestartStake = () => {
+    showCheckout = true
+    dropdownOpen = false
+    timelineType = TimelineTypes.RESTART_STAKE
+    storage.update(($storage) => ({
+      ...$storage,
+      selected: timelineType,
+    }))
+  }
   const timelineTypesToTask = new Map<TimelineTypes, TaskType>([
     [TimelineTypes.DEPOSIT_HSI, TaskType.depositHsi],
+    [TimelineTypes.WITHDRAW_HSI, TaskType.withdrawHsi],
+    [TimelineTypes.GOOD_ACCOUNT, TaskType.goodAccount],
+    [TimelineTypes.END, TaskType.endStake],
   ])
-  const taskTypeFromTimelineType = () => timelineTypesToTask.get(timelineType) as TaskType
-  let dropdownOpen = false
+  const taskTypeFromTimelineType = (t = timelineType) => timelineTypesToTask.get(t) as TaskType
+  const typeToSelect = new Map<TimelineTypes, () => void>([
+    [TimelineTypes.TOKENIZE_HSI, selectTokenizeHsi],
+    [TimelineTypes.DEPOSIT_HSI, selectDepositHsi],
+    [TimelineTypes.WITHDRAW_HSI, selectWithdrawHsi],
+    [TimelineTypes.UPDATE, selectUpdateStake],
+    [TimelineTypes.GOOD_ACCOUNT, selectGoodAccount],
+    [TimelineTypes.END, selectEndStake],
+    [TimelineTypes.RESTART_STAKE, selectRestartStake],
+  ])
+  let filteredOptions: types.TimelineTypes[] = []
+  $: {
+    filteredOptions = options.filter((option) => {
+      switch (option) {
+        case types.TimelineTypes.DEPOSIT_HSI:
+          return ethers.utils.getAddress(stake.owner) === $address
+        case types.TimelineTypes.WITHDRAW_HSI:
+          return existingStakeManagerIsOwner
+        case types.TimelineTypes.TOKENIZE_HSI:
+          return ethers.utils.getAddress(stake.owner) === $address
+            && !stake.tokenized
+        default:
+          return true
+      }
+    })
+  }
+  // $: timelineType = filteredOptions[0]
+  const storage = queryParameters({
+    selected: ssp.string(filteredOptions[0]),
+  })
+  $: timelineType = $storage.selected as types.TimelineTypes
+  // run selected option for the first time
+  $: typeToSelect.get($storage.selected as types.TimelineTypes)?.()
+  const checkoutDepositHsi = async () => {
+    const all = contracts.all($chainId, null)
+    const [tokenIds, settings, settingsEncoded] = await Promise.all([
+      rpcQueries.getTokenIdsUnder($chainId, $address),
+      all.existingStakeManager.defaultSettings(),
+      all.existingStakeManager.defaultEncodedSettings(),
+    ])
+    const hsiAddressToTokenId = await rpcQueries.getCustodianToTokenIds($chainId, tokenIds)
+    const tokenId = hsiAddressToTokenId.get(ethers.utils.getAddress(stake.custodian))
+    if (!tokenId) throw new Error('unable to find token id')
+    addToSequence(TaskType.depositHsi, {
+      tokenId,
+      stake,
+      settings,
+      settingsEncoded: settingsEncoded.toBigInt(),
+    }, {
+      contract: types.ContractType.ExistingStakeManager,
+    })
+  }
+  const checkoutWithdrawHsi = async () => {
+    const all = contracts.all($chainId, null)
+    const owner = await all.existingStakeManager.stakeIdToOwner(stake.custodian)
+    if (owner !== $address) throw new Error('unable to end someone else\'s stake')
+    addToSequence(TaskType.withdrawHsi, {
+      stake,
+    }, {
+      contract: types.ContractType.ExistingStakeManager,
+    })
+  }
+  const checkoutGoodAccountStake = async () => {
+    addToSequence(TaskType.goodAccount, {
+      stake,
+    })
+  }
+  const checkoutEndStake = async () => {
+    addToSequence(TaskType.endStake, {
+      stake,
+    })
+  }
+  const checkout = () => {
+    switch (timelineType) {
+      case TimelineTypes.DEPOSIT_HSI:
+        return checkoutDepositHsi()
+      case TimelineTypes.WITHDRAW_HSI:
+        return checkoutWithdrawHsi()
+      case TimelineTypes.GOOD_ACCOUNT:
+        return checkoutGoodAccountStake()
+      case TimelineTypes.END:
+        return checkoutEndStake()
+    }
+  }
+  const reverseCheckoutAction = () => {
+    removeFromSequence({
+      type: taskTypeFromTimelineType(timelineType),
+      task: {
+        stake,
+      },
+    })
+    typeToSelect.get(timelineType)?.()
+  }
+  const checkoutAction = () => {
+    const result = checkout()
+    if (result) {
+      return result.then(() => {
+        typeToSelect.get(timelineType)?.()
+      })
+    }
+  }
+  const ownerIsPerpetual = addresses.perpetuals.has(stake.owner)
+  const ownerCanEndFromSigner = stake.owner === addresses.ExistingStakeManager
+  const canShow = (option: types.TimelineTypes, against: types.TimelineTypes) => (
+    option === against && timelineType !== against
+  )
 </script>
 
-<!-- {#if !filteredStakesStore.isOptimizable(stake)}
-<Button disabled>Not Optimizable</Button>
-{:else if stake.isHedron}
-<Button
-  on:click={() => addTaskToTimeline(TimelineTypes.DEPOSIT_HSI, stake)}
-  disabled={$timeline && timelineHas(TimelineTypes.DEPOSIT_HSI, stake)}>Deposit</Button>
-{:else if !filteredStakesStore.isEndable(stake)}
-<Button disabled>Not Endable</Button>
-{:else} -->
-<div class="flex flex-row justify-between grid-flow-row">
+<div class="flex flex-row justify-between grid-flow-row min-h-[42px]">
   <div class="flex">
     <Button size="sm"><IconChevronsRight /></Button>
-    <Dropdown bind:open={dropdownOpen} placement="bottom-start">
-      {#if stake.isHedron}
-      <DropdownItem
-        defaultClass={defaultClass(false)}
-        on:click={() => { dropdownOpen = false; timelineType = TimelineTypes.DEPOSIT_HSI }}>
-        <MaintenanceSetting type={TimelineTypes.DEPOSIT_HSI} />
-      </DropdownItem>
-      {/if}
-      <DropdownItem
-        defaultClass={defaultClass(false)}
-        on:click={() => { dropdownOpen = false; timelineType = TimelineTypes.UPDATE }}>
-        <MaintenanceSetting type={TimelineTypes.UPDATE} />
-      </DropdownItem>
-      <DropdownItem
-        defaultClass={defaultClass(false)}
-        on:click={() => { dropdownOpen = false; timelineType = TimelineTypes.GOOD_ACCOUNT }}>
-        <MaintenanceSetting type={TimelineTypes.GOOD_ACCOUNT} />
-      </DropdownItem>
-      <DropdownItem
-        defaultClass={defaultClass(notEndable)}
-        on:click={() => { dropdownOpen = false; timelineType = TimelineTypes.END }}
-        disabled={notEndable}>
-        <MaintenanceSetting type={TimelineTypes.END} />
-      </DropdownItem>
-      {#if $address === stake.owner}
-      <!-- optimized pathway that skips all checks -->
-      <DropdownItem
-        defaultClass={defaultClass(notEndable)}
-        on:click={() => { dropdownOpen = false; timelineType = TimelineTypes.RESTART_STAKE }}
-        disabled={notEndable}>
-        <MaintenanceSetting type={TimelineTypes.RESTART_STAKE} />
-      </DropdownItem>
-      {/if}
+    <Dropdown bind:open={dropdownOpen} placement="right">
+      {#each filteredOptions as option}
+        {#if canShow(option, TimelineTypes.TOKENIZE_HSI)}
+        <DropdownItem
+          defaultClass={defaultClass(false)}
+          on:click={selectTokenizeHsi}>
+          <MaintenanceSetting type={TimelineTypes.TOKENIZE_HSI} />
+        </DropdownItem>
+        {:else if canShow(option, TimelineTypes.DEPOSIT_HSI)}
+        <DropdownItem
+          defaultClass={defaultClass(false)}
+          on:click={selectDepositHsi}>
+          <MaintenanceSetting type={TimelineTypes.DEPOSIT_HSI} />
+        </DropdownItem>
+        {:else if canShow(option, TimelineTypes.WITHDRAW_HSI)}
+        <DropdownItem
+          defaultClass={defaultClass(false)}
+          on:click={selectWithdrawHsi}>
+          <MaintenanceSetting type={TimelineTypes.WITHDRAW_HSI} />
+        </DropdownItem>
+        {:else if canShow(option, TimelineTypes.UPDATE)}
+        <DropdownItem
+          defaultClass={defaultClass(false)}
+          on:click={selectUpdateStake}>
+          <MaintenanceSetting type={TimelineTypes.UPDATE} />
+        </DropdownItem>
+        {:else if canShow(option, TimelineTypes.GOOD_ACCOUNT)}
+        <DropdownItem
+          defaultClass={defaultClass(false)}
+          on:click={selectGoodAccount}>
+          <MaintenanceSetting type={TimelineTypes.GOOD_ACCOUNT} />
+        </DropdownItem>
+        {:else if canShow(option, TimelineTypes.END)}
+        <DropdownItem
+          defaultClass={defaultClass(false)}
+          on:click={selectEndStake}>
+          <MaintenanceSetting type={TimelineTypes.END} />
+        </DropdownItem>
+        {:else if canShow(option, TimelineTypes.RESTART_STAKE)}
+        <DropdownItem
+          defaultClass={defaultClass(false)}
+          on:click={selectRestartStake}>
+          <MaintenanceSetting type={TimelineTypes.RESTART_STAKE} />
+        </DropdownItem>
+        {/if}
+      {/each}
     </Dropdown>
-    <div class="flex px-2 items-center">
-      <MaintenanceSetting type={timelineType} />
-      {#if timelineType === TimelineTypes.GOOD_ACCOUNT}
-      <SignForGoodAccount stake={stake} />
-      {/if}
-    </div>
   </div>
-  <div class="flex flex-grow">
-    {#if depositingUntokenized}
-      <Button on:click={() => {}} disabled>Tokenize</Button>
-    {/if}
-    <StakeSettings />
-  </div>
-  <!-- {/if} -->
-  <div class="flex">
-    <CheckoutButton disabled={depositingUntokenized} pathReverse={1} action={async () => {
-      addToSequence(taskTypeFromTimelineType(), {
-        stake,
-        settings: $settings,
-      })
+  <div class="flex px-2 items-center flex-grow">
+    <MaintenanceSetting type={timelineType} />
+    {#if timelineType === TimelineTypes.GOOD_ACCOUNT}
+    <SignForGoodAccount {stake} on:requested={() => {
+      // invalidateAll()
+      stake.requestedGoodAccounting = true
+      typeToSelect.get(timelineType)?.()
     }} />
+    {:else if timelineType === TimelineTypes.TOKENIZE_HSI}
+    <DoTokenizeHsi {stake} />
+    {:else if timelineType === TimelineTypes.DEPOSIT_HSI}
+    <DoDepositHsiApproval {stake} {existingStakeManagerIsOwner} />
+    {:else if timelineType === TimelineTypes.WITHDRAW_HSI}
+    {#if !$connected}
+    <div class="flex px-4"><ConnectWallet /></div>
+    {/if}
+    {:else if timelineType === TimelineTypes.UPDATE}
+    <div class="flex italic px-4">
+      Coming Soon
+    </div>
+    {:else if timelineType === TimelineTypes.END}
+    <div class="flex flex-row px-4 items-center">Custodied By
+      <span class="px-2">
+        {#if ownerCanEndFromSigner}<HexPayDayIcon />
+        {:else if ownerIsPerpetual}{@html renderIcon(stake)}
+        {:else}<IconQuestionMark />
+        {/if}
+      </span>
+    </div>
+    {#if !$connected}
+      <ConnectWallet />
+    {/if}
+    {/if}
   </div>
+  {#if showCheckout}
+  <div class="flex">
+    <CheckoutButton
+      disabled={buttonDisabled}
+      requireConnected={true}
+      text={checkoutReversable ? 'Remove from Sequence' : 'Add to Sequence'}
+      action={checkoutReversable ? reverseCheckoutAction : checkoutAction} />
+  </div>
+  {/if}
 </div>

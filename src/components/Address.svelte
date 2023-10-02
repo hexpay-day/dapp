@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { ellipsisAddress } from "../stores/addresses";
+	import { windowIsAvailable } from "../stores/web3";
 
   export let address!: string | Promise<string>
   export let ellipsis = false
@@ -8,6 +9,7 @@
   $: characters = size === 'md' ? 6 : (size === 'sm' ? 4 : 6)
   let width = 0
   const handleResize = () => {
+    if (!$windowIsAvailable) return
     width = window.innerWidth
   }
   handleResize()

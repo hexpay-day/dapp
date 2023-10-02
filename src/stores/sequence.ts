@@ -1,4 +1,4 @@
-import type { StakeManager } from "@hexpayday/stake-manager/artifacts/types";
+import type { ExistingStakeManager, StakeManager } from "@hexpayday/stake-manager/artifacts/types";
 import * as addresses from './addresses'
 import { all } from './contracts'
 import type * as ethers from "ethers";
@@ -7,8 +7,9 @@ import { scoped, setScoped } from './local'
 import { writable } from 'svelte/store'
 import { hexData } from "./hex";
 import { address, chainId, provider, signer } from "./web3";
-import { ContractType, type ApprovalStep, type StakeStartStep, type Step, type Tasks } from "../types";
-import { TaskType, FundingOrigin } from '../types'
+import { ContractType, type ApprovalStep, type StakeStartStep, type Step, type Tasks, type DepositHsiStep, type WithdrawStep } from "../types";
+import { TaskType, FundingOrigin, TimelineTypes } from '../types'
+import * as backend from './backend'
 import _ from "lodash";
 import type { AccessListish } from "ethers/lib/utils";
 
@@ -45,16 +46,18 @@ const _callOnContracts = async (
   rpcMethod: RpcMethods = 'functions',
   overrides: ethers.CallOverrides = {},
 ) => {
-  if (rpcMethod === 'accessList') throw new Error('internal call on access list not supported')
-  const $chainId = get(chainId)
+  if (rpcMethod === 'accessList') {
+    throw new Error('internal call on access list not supported')
+  }
   const extra: ethers.CallOverrides[] = []
   if (!_.isEmpty(overrides)) {
     extra.push(overrides)
   }
   if (step.type === TaskType.start) {
+    const task = step.task as StakeStartStep
     return contracts.stakeManager[rpcMethod].stakeStart(
-      step.task.amount as ethers.BigNumberish,
-      step.task.lockedDays,
+      task.amount as ethers.BigNumberish,
+      task.lockedDays,
       ...extra,
     )
   } else if (step.type === TaskType.approval) {
@@ -62,6 +65,19 @@ const _callOnContracts = async (
     return contracts.hex[rpcMethod].approve(
       task.spender,
       task.consumed - task.allowance,
+      ...extra,
+    )
+  } else if (step.type === TaskType.depositHsi) {
+    const task = step.task as DepositHsiStep
+    return contracts.existingStakeManager[rpcMethod].depositHsi(
+      task.tokenId,
+      task.settingsEncoded,
+      ...extra,
+    )
+  } else if (step.type === TaskType.withdrawHsi) {
+    const task = step.task as WithdrawStep
+    return contracts.existingStakeManager[rpcMethod].withdrawHsi(
+      task.stake.custodian, // hsi address
       ...extra,
     )
   }
@@ -133,17 +149,18 @@ export const updateSequenceItem = (step: Step, updates: Partial<Step>) => {
   items.update(($items) => {
     return $items.map(($item) => {
       if ($item.id !== step.id) return $item
-      console.log($item, updates)
       return _.merge($item, updates)
     })
   })
 }
 
-export const removeFromSequence = (seq: Step) => {
-  // console.log(seq, get(items))
-  // setScoped(scoped, 'sequence', get(items).filter((i) => !_.isEqual(i, seq)))
+export const existsInSequence = (filter: Partial<Step>) => {
+  return !!get(items).find((item) => _.isMatch(item, filter))
+}
+
+export const removeFromSequence = (filter: Partial<Step>) => {
   items.update(($items) => (
-    $items.filter((i) => !_.isEqual(i, seq))
+    $items.filter((i) => !_.isMatch(i, filter))
   ))
 }
 
@@ -162,46 +179,67 @@ type TaskGroup = {
   contract: ContractType;
 }
 
+const timelineHeadline = new Map<TaskType, string>([
+  [TaskType.start, 'Start Stake(s)'],
+  [TaskType.depositHsi, 'Deposit HSI(s)'],
+  [TaskType.withdrawHsi, 'Withdraw HSI(s)'],
+  [TaskType.endStake, 'End Stake(s)'],
+])
+
 export const ordered = derived([items, hexData], ([$items, $hexData]) => {
   let $ordered: TaskGroup[] = []
   let $bal = $hexData.balance
   const allowance = $hexData.allowance
   let group!: TaskGroup
   const itemsByContractTarget = _($items)
+    // this should be expanded later
     .sortBy('contract')
     .groupBy('contract')
     .values()
     .flatten()
     .value()
-  for (const task of itemsByContractTarget) {
-    if (task.type === TaskType.start) {
-      if (task.task.amount) {
-        $bal -= BigInt(task.task.amount.toString())
-        task.invalid = $bal < 0n
-        if (task.invalid) {
-          group = {
-            name: 'Out of $HEX',
-            invalid: true,
-            items: [],
-            contract: ContractType.Invalid,
-          }
-          $ordered.push(group)
-        }
-      }
-    }
-    if (!group) {
+  const addGroup = (taskType: TaskType, item: Step) => {
+    const name = timelineHeadline.get(taskType) as string
+    if (!group || group.name !== name) {
       group = {
-        name: 'Start Transaction',
+        name,
         invalid: false,
         items: [],
-        contract: task.contract,
+        contract: item.contract,
       }
       $ordered.push(group)
     }
-    group.items.push(task)
+    group.items.push(item)
+  }
+  for (const item of itemsByContractTarget) {
+    switch (item.type) {
+      case TaskType.start: {
+        if (item.task.amount) {
+          $bal -= BigInt(item.task.amount.toString())
+          item.invalid = $bal < 0n
+          if (item.invalid) {
+            group = {
+              name: 'Out of $HEX',
+              invalid: true,
+              items: [],
+              contract: ContractType.Invalid,
+            }
+            $ordered.push(group)
+          }
+        }
+        addGroup(TaskType.start, item)
+        break
+      }
+      default: {
+        addGroup(item.type, item)
+        break
+      }
+    }
   }
   const consumed = $hexData.balance - $bal
   if (consumed > allowance) {
+    // modify this to not prepend, but rather, insert before.
+    // no matter where the start stakes group is in the list
     $ordered = ([{
       name: 'Approval',
       invalid: false,
@@ -236,11 +274,19 @@ export const executeList = async ($group: TaskGroup) => {
       const receipt = await tx.wait()
       $group.items.forEach(removeFromSequence)
       console.log('tx mined %o', receipt.transactionHash)
+      await backend.clearCache({
+        chainId: get(chainId),
+        account: get(address),
+        hash: receipt.transactionHash,
+      })
+    }).catch((err) => {
+      console.log(err)
+      throw err
     })
 }
 
 export const executeListOfTasks = async ($group: TaskGroup) => {
-  const { items, invalid } = $group
+  const { items, invalid, contract } = $group
   if (invalid) {
     return null
   }
@@ -256,11 +302,28 @@ export const executeListOfTasks = async ($group: TaskGroup) => {
     return callOnContracts(contracts, item, 'functions') as Promise<ethers.ContractTransaction>
   }
   const calldata = items.map((step) => getCalldataFromTask(contracts, step))
-  return contracts.stakeManager.multicall(calldata, false)
+  const overrides = {
+    gasLimit: 10_000_000,
+  }
+  switch (contract) {
+    case ContractType.ExistingStakeManager:
+      return contracts.existingStakeManager.multicall(calldata, false, overrides)
+    case ContractType.StakeManager:
+      return contracts.stakeManager.multicall(calldata, false, overrides)
+    default:
+      throw new Error('unrecognized contract')
+  }
 }
 
 export const getCalldataFromTask = (contracts: AllContracts, step: Step) => {
-  return getCalldataFromStartTask(contracts.stakeManager, step)
+  if (step.type === TaskType.start) {
+    return getCalldataFromStartTask(contracts.stakeManager, step)
+  } else if (step.type === TaskType.depositHsi) {
+    return getCalldataFromDepositHsiTask(contracts.existingStakeManager, step)
+  } else if (step.type === TaskType.withdrawHsi) {
+    return getCalldataFromWithdrawHsiTask(contracts.existingStakeManager, step)
+  }
+  throw new Error('unknown group')
 }
 
 const useOptimizedPath = (step: Step) => {
@@ -275,6 +338,21 @@ const useOptimizedPath = (step: Step) => {
     return true
   }
   return false
+}
+
+const getCalldataFromDepositHsiTask = async (existingStakeManager: ExistingStakeManager, step: Step) => {
+  const task = step.task as DepositHsiStep
+  return existingStakeManager.interface.encodeFunctionData('depositHsi', [
+    task.tokenId,
+    task.settingsEncoded,
+  ])
+}
+
+const getCalldataFromWithdrawHsiTask = async (existingStakeManager: ExistingStakeManager, step: Step) => {
+  const task = step.task as WithdrawStep
+  return existingStakeManager.interface.encodeFunctionData('withdrawHsi', [
+    task.stake.custodian,
+  ])
 }
 
 const getCalldataFromStartTask = async (stakeManager: StakeManager, step: Step) => {

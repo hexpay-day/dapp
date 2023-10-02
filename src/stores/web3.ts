@@ -62,14 +62,12 @@ const underlyingProvider = readable<null | ethers.providers.ExternalProvider>(nu
       if (get(clickedConnect) && !get(intendsToConnect)) {
         return
       }
-      underlying.addListener('chainChanged', providerNetworkSwitched)
+      (underlying as any).addListener('chainChanged', providerNetworkSwitched)
       // intendsToConnect.set((underlying as any).isConnected())
     } catch (err) {}
   }
   setProvider = () => {
-    if (underlying) {
-      teardown()
-    }
+    teardown()
     underlying = window.ethereum
     if (underlying) {
       // console.log('updating provider', +(underlying as any).networkVersion)
@@ -92,8 +90,11 @@ export const connectable = derived([underlyingProvider], ([$underlyingProvider])
 const mmChainId = ($underlyingProvider: null | ethers.providers.ExternalProvider) => {
   return +($underlyingProvider as any)?.networkVersion
 }
-export const provider = derived([underlyingProvider, chainId], ([$underlyingProvider, $chainId]) => {
-  if (!$underlyingProvider || !$chainId) return null
+export const provider = derived(
+  [underlyingProvider, intendsToConnect, chainId], (
+  [$underlyingProvider, $intendsToConnect, $chainId]
+) => {
+  if (!$underlyingProvider || !$chainId || !$intendsToConnect) return null
   return new ethers.providers.Web3Provider($underlyingProvider)
 })
 export const publicProvider = derived([chainId], ([$chainId]) => {
@@ -115,7 +116,7 @@ export const address = readablePromise<string>(ethers.constants.AddressZero, der
   }
   const accounts = await $provider.send("eth_requestAccounts", [])
   const account = accounts.length && accounts[0]
-  return _.isString(account) ? account : ethers.constants.AddressZero
+  return _.isString(account) ? ethers.utils.getAddress(account) : ethers.constants.AddressZero
 }))
 export const connected = derived(
   [intendsToConnect, chainId, address],
@@ -245,3 +246,16 @@ export const sign712Message = async (typedRequest: sequence.utils.TypedData) => 
 //     },
 //   }),
 // }
+
+export const structOutputToObject = (struct: object) => {
+  return _(struct).entries().reduce((obj, [key, entry]) => {
+    if (_.isNaN(+key)) {
+      let value = _.isArrayLike(entry) ? structOutputToObject(entry) : entry
+      if (value._isBigNumber) {
+        value = value.toBigInt()
+      }
+      obj[key] = value
+    }
+    return obj
+  }, {} as Record<string, any>)
+}

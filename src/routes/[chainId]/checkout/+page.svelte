@@ -103,6 +103,35 @@ nothing to check out
           <SequenceGasInfo isFirst={index === 0} step={item} />
         </div>
       </TimelineItem>
+      {:else if item.type === TaskType.depositHsi}
+      <TimelineItem title="Deposit">
+        <svelte:fragment slot="icon">
+          <TimelineIcon type="deposit" />
+        </svelte:fragment>
+        <div class="flex flex-col">
+          <div class="flex flex-row justify-between">
+            <SequenceGasInfo isFirst={index === 0} step={item} />
+            <Button class="py-2 px-3" on:click={() => {
+              removeFromSequence(item)
+            }}><IconX /></Button>
+          </div>
+        </div>
+      </TimelineItem>
+      {:else if item.type === TaskType.withdrawHsi}
+      <TimelineItem title="Withdraw">
+        <svelte:fragment slot="icon">
+          <TimelineIcon type="withdraw" />
+        </svelte:fragment>
+        <div class="flex flex-col">
+          <div class="flex flex-row justify-between">
+            <!-- <SequenceGasInfo isFirst={index === 0} step={item} /> -->
+            id: {numberWithCommas(item.task.stake.stakeId.toString(), '_')}
+            <Button class="py-2 px-3" on:click={() => {
+              removeFromSequence(item)
+            }}><IconX /></Button>
+          </div>
+        </div>
+      </TimelineItem>
       {/if}
     {/each}
   </Timeline>

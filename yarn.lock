@@ -755,10 +755,10 @@
   resolved "https://registry.yarnpkg.com/@graphql-typed-document-node/core/-/core-3.2.0.tgz#5f3d96ec6b2354ad6d8a28bf216a1d97b5426861"
   integrity sha512-mB9oAsNCm9aM3/SOv4YtBMqZbYj10R7dkq8byBqxGY/ncFwhf2oQzMV+LCRlWoDSEBJ3COiR1yeDvMtsoOsuFQ==
 
-"@hexpayday/stake-manager@^1.0.12":
-  version "1.0.15"
-  resolved "https://registry.yarnpkg.com/@hexpayday/stake-manager/-/stake-manager-1.0.15.tgz#4f83a4234acf546aa1c738910faf9eb4ce07d8f5"
-  integrity sha512-Jw/NXbbgkQ1u+DuaNL1EqN1wa58jP++DpPqs/AfJt32/DrV9k492h5lxitWyH5Vlqj4B7hIuCYs11yhAuuws7Q==
+"@hexpayday/stake-manager@^1.0.16":
+  version "1.0.16"
+  resolved "https://registry.yarnpkg.com/@hexpayday/stake-manager/-/stake-manager-1.0.16.tgz#3a0236eb8b6f43095cac4a2078c61b64574b818d"
+  integrity sha512-bnA96KKJTJQzqx97NGutdTqtEOKScz8s5HKdpvoUy63XkH1kExDy1J9K9RENirV94hVNQ0ASkt4+/PZ5aykyxQ==
 
 "@humanwhocodes/config-array@^0.11.10":
   version "0.11.10"
@@ -5227,6 +5227,11 @@ svelte@^4.0.0:
     locate-character "^3.0.0"
     magic-string "^0.30.0"
     periscopic "^3.1.0"
+
+sveltekit-search-params@^1.0.15:
+  version "1.0.15"
+  resolved "https://registry.yarnpkg.com/sveltekit-search-params/-/sveltekit-search-params-1.0.15.tgz#38b42e8743250ea346a310742e91bd04c322eeaa"
+  integrity sha512-LLuG961adpMMnyG/5Ixj9Cv++62ol7aSpVpE0qIFzQuOZ/5J3PwSoXu06pBw9DZi5Awj40OXtGLtpyh6WZjqVQ==
 
 tailwind-merge@^1.13.2:
   version "1.14.0"

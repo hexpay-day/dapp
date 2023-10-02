@@ -14,6 +14,10 @@ const desiredNetworks = [{
     chainId: 943,
     name: 'PulseChain Testnet V4',
     testnet: true,
+}, {
+    chainId: 31337,
+    name: 'Hardhat',
+    testnet: true,
 }]
 
 export async function seed(knex: Knex): Promise<void> {
