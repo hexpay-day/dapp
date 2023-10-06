@@ -7,9 +7,14 @@
   import Footer from '../components/Footer.svelte'
 	import NavigatingIndicator from "../components/NavigatingIndicator.svelte";
   import NetworkChooser from '../components/NetworkChooser.svelte'
+  import { Banner } from 'flowbite-svelte';
+	import { IconTool } from "@tabler/icons-svelte";
 </script>
 
-<div class="container m-auto flex justify-between max-w-5xl h-14 items-center p-2">
+<Banner dismissable={false}>
+  <div class="container m-auto">Site is in alpha stages! <IconTool class="inline-block" /> Enjoy the docs, poke around, but don't expect anything to work :)</div>
+</Banner>
+<div class="container m-auto flex justify-between max-w-5xl h-14 items-center px-2">
   <div class="flex items-center">
     <Settings />
     <div class="mx-2">
@@ -23,7 +28,7 @@
     <NetworkChooser />
   </div>
 </div>
-<div class="container m-auto pt-2 px-2 pb-20 max-w-5xl">
+<div class="flex flex-col py-10">
   <slot />
 </div>
 <SpeedNav />
