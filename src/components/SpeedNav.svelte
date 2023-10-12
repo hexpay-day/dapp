@@ -14,7 +14,7 @@
   } from '../stores/day'
 	import { onMount } from 'svelte';
   import FilterPath from './FilterPath.svelte'
-	import { IconAtom2, IconFlame, IconSearch, IconShoppingCart } from '@tabler/icons-svelte';
+	import { IconAtom2, IconFlame, IconHome, IconSearch, IconShoppingCart } from '@tabler/icons-svelte';
 	import { ethers } from 'ethers';
   const { address } = web3Store
 
@@ -28,7 +28,8 @@
   const chainId = web3Store.chainId
 
   const navTo = (type: string) => {
-    const url = type === 'end' ? `/${$chainId}/end/${$currentDay}/${defaultOffsetDays}`
+    const url = type === 'home' ? `/${$chainId}`
+      : type === 'end' ? `/${$chainId}/end/${$currentDay}/${defaultOffsetDays}`
       : type === 'start' ? `/${$chainId}/start/`
       : type === 'maintain' ? `/${$chainId}/maintain/${$address === ethers.ZeroAddress ? '' : $address}`
       : type === 'checkout' ? `/${$chainId}/checkout/` : ''
@@ -36,6 +37,10 @@
     goto(url)
   }
   const routes = [{
+    key: 'home',
+    name: 'Home',
+    icon: 'home',
+  }, {
     key: 'start',
     name: 'Start',
     icon: 'fire',
@@ -60,6 +65,7 @@
     <SpeedDialButton on:click={() => navTo(route.key)} name={route.name}>
       <!-- <Icon name={route.icon} /> -->
       {#if route.icon === 'fire'}<IconFlame />
+      {:else if route.icon === 'home'}<IconHome />
       {:else if route.icon === 'search'}<IconSearch />
       {:else if route.icon === 'atom-2'}<IconAtom2 />
       {:else if route.icon === 'cart'}<IconShoppingCart />

@@ -30,7 +30,7 @@
     </div>
   </div>
 </div>
-<div class="flex flex-col py-10 px-2">
+<div class="flex flex-col py-10">
   <slot />
 </div>
 <SpeedNav />

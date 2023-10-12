@@ -5,7 +5,7 @@
   import IconHedron from '../../components/icons/Hedron.svelte'
 </script>
 
-<section class="bg-white dark:bg-gray-900 flex items-center">
+<section class="bg-white dark:bg-gray-900 flex items-center px-2">
   <div class="py-8 px-4 mx-auto max-w-screen-xl text-center lg:py-16">
     <div class="max-w-5xl">
       <h1 class="mb-4 text-4xl font-extrabold tracking-tight leading-none text-gray-900 md:text-5xl lg:text-6xl dark:text-white">HexPay.Day</h1>
@@ -28,7 +28,7 @@
     </div>
   </div>
 </section>
-<section class="bg-slate-50 shadow-inner flex items-center">
+<section class="bg-slate-50 shadow-inner flex items-center px-2">
   <div class="py-8 px-4 mx-auto max-w-screen-xl text-center lg:py-16">
     <div class="max-w-5xl">
       <h3 class="text-4xl my-4">Space for Every Risk Appetite</h3>
