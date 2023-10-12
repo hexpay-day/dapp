@@ -21,6 +21,12 @@ export const getCurrentDay = async () => {
   return Number(hexCurrentDay)
 }
 
+setInterval(() => {
+  // we can use a request animation frame to bolster this
+  // but going directly to the chain is useful for development purposes
+  getCurrentDay()
+}, 10_000)
+
 export const useISO = writable<boolean>(false)
 export const timezoneLabel = derived([useISO], ([$useISO]) => (
   $useISO ? 'utc' : 'local'

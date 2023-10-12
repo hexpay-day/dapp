@@ -9,6 +9,7 @@
   import NetworkChooser from '../components/NetworkChooser.svelte'
   import { Banner } from 'flowbite-svelte';
 	import { IconTool } from "@tabler/icons-svelte";
+	import { currentDay } from "../stores/day";
 </script>
 
 <Banner dismissable={false}>
@@ -20,6 +21,9 @@
       <Settings />
       <div class="mx-2">
         <NavigatingIndicator />
+      </div>
+      <div class="mx-2">
+        Day {$currentDay}
       </div>
     </div>
     <div class="gap-2 my-1 flex">

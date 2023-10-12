@@ -3,6 +3,7 @@
 	import { IconBan, IconBook2, IconFlame, IconGasStation } from "@tabler/icons-svelte";
   import A from "../../components/A.svelte"
   import IconHedron from '../../components/icons/Hedron.svelte'
+  import IconCommunis from '../../components/icons/Communis.svelte'
 </script>
 
 <section class="bg-white dark:bg-gray-900 flex items-center px-2">
@@ -33,9 +34,9 @@
     <div class="max-w-5xl">
       <h3 class="text-4xl my-4">Space for Every Risk Appetite</h3>
       <div class="py-2 flex flex-col items-center">
-        <ol class="mb-4 text-lg font-normal text-gray-900">
-          <li>Stake with the original hex.com contract</li>
-          <li>Optimize your stakes with hexpay.day contracts</li>
+        <ol class="mb-4 text-lg lg:text-xl font-normal text-gray-900">
+          <li>Stake with the original <A link="https://go.hex.com">go.hex.com</A> contract</li>
+          <li>Optimize your stakes with HexPay.Day contracts</li>
           <li>Allow anyone to mint tokens*</li>
           <li>Collect minted tokens at your convenience</li>
           <li>Automatically send tokens to your wallet</li>
@@ -43,7 +44,7 @@
           <li>End your HSIs</li>
           <li><A link="https://docs.hexpay.day/">Docs</A> for Integrating your protocol</li>
         </ol>
-        <cite class="flex flex-row items-center text-sm">*$HEDRON <span class="px-1"><IconHedron /></span> + $COMM</cite>
+        <cite class="flex flex-row items-center text-sm">*$HEDRON <span class="px-1"><IconHedron /></span> + $COMM<IconCommunis /></cite>
       </div>
     </div>
   </div>

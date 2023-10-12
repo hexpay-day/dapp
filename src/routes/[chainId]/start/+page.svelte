@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ethers } from "ethers";
-  import { hexData, fetchData } from "../../../stores/hex";
+  import { hexData, fetchData, balance } from "../../../stores/hex";
   import * as addresses from '../../../stores/addresses'
   import { chainId, address, connected, numberWithCommas } from '../../../stores/web3'
   import {
@@ -11,6 +11,7 @@
     Helper,
     ButtonGroup,
     Button,
+	Tooltip,
   } from 'flowbite-svelte'
   import {
     IconCalendar,
@@ -98,7 +99,7 @@
     contract: useHexPayDayContract ? addresses.StakeManager || ethers.ZeroAddress : addresses.Hex,
     lockedDays: $lockedDays,
     for: $validatedAccount || ethers.ZeroAddress,
-    amount: $amountIsValid ? $amount : null,
+    amount: $amountIsValid ? BigInt($amount) : null,
     fundingFromAddress: $fundFromWallet,
     useAdvancedSettings: useHexPayDayContract && $useAdvancedSettings,
     fundingOrigin: $fundFromWallet ? FundingOrigin.connected : (
@@ -115,9 +116,13 @@
 <div class="grid max-w-5xl m-auto w-full py-2">
   <div class="grid grid-cols-2 align-middle">
     <Label defaultClass="flex flex-row text-sm items-center font-medium">
-      <span class="mr-2 flex align-middle min-w-[120px]">Use {useHexPayDayContract ? 'hexpay.day' : 'go.hex.com'}</span>
+      <span class="mr-2 flex align-middle min-w-[120px] text-base">Use {useHexPayDayContract ? 'hexpay.day' : 'go.hex.com'}</span>
       <Toggle bind:checked={useHexPayDayContract} />
     </Label>
+    <div class="flex items-center justify-end text-base font-medium">
+      <span class="flex">Balance: {ethers.formatUnits($balance || 0n, 8)} $HEX</span>
+      <Tooltip class="text-center" placement="top-end">{numberWithCommas(($balance || 0n).toString(), '_')} Hearts</Tooltip>
+    </div>
   </div>
 </div>
 <div class="grid grid-cols-2 max-w-5xl w-full m-auto gap-x-4">
@@ -145,7 +150,7 @@
           </ButtonGroup>
         </div>
         <div class="flex flex-col flex-grow col-span-1">
-          <Label for="days-input" class="text-right">End Date/Time</Label>
+          <Label for="days-input" class="text-center">End Date/Time</Label>
           <Label class="flex flex-row font-normal stake-start-cal-select">
             <InputAddon class="justify-center flex-none">
               <IconCalendar class="mx-1" />
@@ -173,7 +178,9 @@
     </div>
     <div class="flex flex-col col-span-1">
       <div class="flex flex-row">
+        {#if useHexPayDayContract}
         <Toggle class="mt-5" bind:checked={$fundFromWallet} />
+        {/if}
         <div class="flex flex-col flex-grow">
           <Label for="amount-input">Fund from {$fundFromWallet ? 'Connected Wallet' : 'Contract Balance'}</Label>
           <div class="flex flex-row">
@@ -200,6 +207,7 @@
   </div>
   <div class="grid col-span-2 grid-cols-2 gap-4">
     <div class="flex flex-col col-span-1">
+      {#if useHexPayDayContract}
       <div class="grid grid-cols-2">
         <div class="flex flex-col col-span-1 items-start">
           <Label class="flex flex-row mt-5 leading-[42px]">
@@ -213,8 +221,9 @@
         </div>
         {/if}
       </div>
+      {/if}
     </div>
-    {#if $useAdvancedSettings}
+    {#if useHexPayDayContract && $useAdvancedSettings}
     <CopyIterations />
     <div class="flex flex-col col-span-1">
       <Label for="funder-input" class="text-gray-900 dark:text-gray-300">{$fundOther ? 'Funder' : 'Owner'}</Label>
