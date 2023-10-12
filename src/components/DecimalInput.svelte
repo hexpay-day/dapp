@@ -14,8 +14,6 @@
   export let placeholder = ''
   export let zeroIsNull = false
   export let nullIsZero = false
-  // const maxUint256 = ethers.constants.MaxUint256.toBigInt()
-  // const minInt256 = ethers.constants.MinInt256.toBigInt()
   export let max: bigint | null = null
   export let min: bigint | null = null
   export let id = ''
@@ -26,7 +24,7 @@
   export let uint = true
   export let type: InputType = 'text'
   export let disabled = false
-  export let maxUint = ethers.constants.MaxUint256.toBigInt()
+  export let maxUint = ethers.MaxUint256
   export const value = writable<null | bigint>(null)
 	const dispatch = createEventDispatcher();
   const unsubscribe = value.subscribe(($value) => {
@@ -61,7 +59,7 @@
         text = `${num}.${dec.slice(0, decimals)}`
         amnt = text
       }
-      const parsed = ethers.utils.parseUnits(amnt, decimals).toBigInt()
+      const parsed = ethers.parseUnits(amnt, decimals)
       if (parsed === 0n && zeroIsNull) {
         value.set(parsed)
         return null
@@ -80,12 +78,12 @@
         return false
       }
       if (!_.isNil(max) && parsed > max) {
-        text = ethers.utils.formatUnits(max, decimals)
+        text = ethers.formatUnits(max, decimals)
         value.set(max)
         return true
       }
       if (!_.isNil(min) && parsed < min) {
-        text = ethers.utils.formatUnits(min, decimals)
+        text = ethers.formatUnits(min, decimals)
         value.set(min)
         return true
       }

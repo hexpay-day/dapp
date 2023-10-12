@@ -30,7 +30,7 @@
   const navTo = (type: string) => {
     const url = type === 'end' ? `/${$chainId}/end/${$currentDay}/${defaultOffsetDays}`
       : type === 'start' ? `/${$chainId}/start/`
-      : type === 'maintain' ? `/${$chainId}/maintain/${$address === ethers.constants.AddressZero ? '' : $address}`
+      : type === 'maintain' ? `/${$chainId}/maintain/${$address === ethers.ZeroAddress ? '' : $address}`
       : type === 'checkout' ? `/${$chainId}/checkout/` : ''
     if (!url) return
     goto(url)

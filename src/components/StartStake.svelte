@@ -102,16 +102,16 @@
 </div>
 <div>
   <p class="flex">
-    <span class="min-w-[250px] whitespace-pre font-mono">Balance:   {ethers.utils.formatUnits($balance || 0n, 8)}</span>
+    <span class="min-w-[250px] whitespace-pre font-mono">Balance:   {ethers.formatUnits($balance || 0n, 8)}</span>
     <button on:click={startStakeFromBalance}>Start Stake (singleton)</button>
     <button on:click={startStake}>Start Stake (isolated)</button>
   </p>
   <p class="flex">
-    <span class="min-w-[250px] whitespace-pre font-mono">Deposited: {ethers.utils.formatUnits($deposited || 0n, 8)}</span>
+    <span class="min-w-[250px] whitespace-pre font-mono">Deposited: {ethers.formatUnits($deposited || 0n, 8)}</span>
     <button on:click={startStake}>Start Stake</button>
   </p>
   <p class="flex">
-    <span class="min-w-[250px] whitespace-pre font-mono">Isolated:  {ethers.utils.formatUnits($isolated || 0n, 8)}</span>
+    <span class="min-w-[250px] whitespace-pre font-mono">Isolated:  {ethers.formatUnits($isolated || 0n, 8)}</span>
     <button on:click={startStake}>Start Stake</button>
   </p>
 </div> -->

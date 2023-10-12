@@ -2,6 +2,7 @@
   import {
     Button,
     ButtonGroup,
+    Spinner,
     Timeline,
     TimelineItem,
   } from 'flowbite-svelte'
@@ -34,9 +35,10 @@
   import SequenceGasInfo from '../../../components/SequenceGasInfo.svelte'
 
   let targeted = 0
+  let executing = -1
 </script>
 
-<div class="flex flex-col m-auto relative">
+<div class="flex flex-col m-auto relative w-full max-w-5xl pt-8 pb-16">
 {#if !$ordered.length}
 nothing to check out
 {:else}
@@ -73,14 +75,14 @@ nothing to check out
               {#if item.task.fundingOrigin === FundingOrigin.connected}
               <Button class="flex">
                 <HexIcon class="mr-2" size={24} />
-                {numberWithCommas(item.task.amount ? ethers.utils.formatUnits(item.task.amount, 8) : '0.0')}
+                {numberWithCommas(item.task.amount ? ethers.formatUnits(item.task.amount, 8) : '0.0')}
                 <IconChevronRight class="w-4 h-4 mx-2" />
                 <IconFileCode />
               </Button>
               {/if}
               <Button class="flex">
                 <HexIcon class="mr-2" size={24} />
-                {numberWithCommas(item.task.amount ? ethers.utils.formatUnits(item.task.amount, 8) : '0.0')}
+                {numberWithCommas(item.task.amount ? ethers.formatUnits(item.task.amount, 8) : '0.0')}
                 <IconFlame class="ml-2" />
               </Button>
               <Button class="flex">
@@ -96,7 +98,7 @@ nothing to check out
               <Button class="py-2"><IconCircleKey class="mr-2" />{item.task.lockedDays} Day(s)</Button>
               <Button class="py-2">{dateTimeAsString(new Date(+($useISO ? $startDateISO : $startDateLocal) + (DAY * +item.task.lockedDays)))} {$timezoneLabel}</Button>
             </ButtonGroup>
-            <Button class="py-2 px-3" on:click={() => {
+            <Button class="py-2 px-3" disabled={executing === index} on:click={() => {
               removeFromSequence(item)
             }}><IconX /></Button>
           </div>
@@ -111,7 +113,7 @@ nothing to check out
         <div class="flex flex-col">
           <div class="flex flex-row justify-between">
             <SequenceGasInfo isFirst={index === 0} step={item} />
-            <Button class="py-2 px-3" on:click={() => {
+            <Button class="py-2 px-3" disabled={executing === index} on:click={() => {
               removeFromSequence(item)
             }}><IconX /></Button>
           </div>
@@ -126,7 +128,22 @@ nothing to check out
           <div class="flex flex-row justify-between">
             <!-- <SequenceGasInfo isFirst={index === 0} step={item} /> -->
             id: {numberWithCommas(item.task.stake.stakeId.toString(), '_')}
-            <Button class="py-2 px-3" on:click={() => {
+            <Button class="py-2 px-3" disabled={executing === index} on:click={() => {
+              removeFromSequence(item)
+            }}><IconX /></Button>
+          </div>
+        </div>
+      </TimelineItem>
+      {:else if item.type === TaskType.endStake}
+      <TimelineItem title="end">
+        <svelte:fragment slot="icon">
+          <TimelineIcon type="coin" />
+        </svelte:fragment>
+        <div class="flex flex-col">
+          <div class="flex flex-row justify-between">
+            <!-- <SequenceGasInfo isFirst={index === 0} step={item} /> -->
+            id: {numberWithCommas(item.task.stake.stakeId.toString(), '_')}
+            <Button class="py-2 px-3" disabled={executing === index} on:click={() => {
               removeFromSequence(item)
             }}><IconX /></Button>
           </div>
@@ -137,8 +154,16 @@ nothing to check out
   </Timeline>
   <div class="flex justify-end">
     {#if !group.invalid}
-    <Button disabled={index !== targeted} on:click={() => {
-      executeList(group)
+    {#if executing === index}
+    <span class="flex py-1 px-2">
+      <Spinner />
+    </span>
+    {/if}
+    <Button disabled={index !== targeted || executing === index} on:click={() => {
+      executing = index
+      executeList(group).then(() => {
+        executing = -1
+      })
     }}>Execute Tasks</Button>
     {/if}
   </div>

@@ -7,14 +7,13 @@ import { scoped, setScoped } from './local'
 import { writable } from 'svelte/store'
 import { hexData } from "./hex";
 import { address, chainId, provider, signer } from "./web3";
-import { ContractType, type ApprovalStep, type StakeStartStep, type Step, type Tasks, type DepositHsiStep, type WithdrawStep } from "../types";
-import { TaskType, FundingOrigin, TimelineTypes } from '../types'
+import { ContractType, type ApprovalStep, type StakeStartStep, type Step, type Tasks, type DepositHsiStep, type WithdrawStep, type EndStep } from "../types";
+import { TaskType, FundingOrigin } from '../types'
 import * as backend from './backend'
 import _ from "lodash";
-import type { AccessListish } from "ethers/lib/utils";
 
-type AllContracts = ReturnType<typeof getContracts>
-type RpcMethods = 'functions' | 'callStatic' | 'estimateGas' | 'accessList' | 'populateTransaction'
+type AllContracts = Awaited<ReturnType<typeof getContracts>>
+type RpcMethods = 'send' | 'staticCall' | 'estimateGas' | 'accessList' | 'populateTransaction'
 
 export const addToSequence = (type: TaskType, task: Tasks, options: Partial<Step> = {
   optimize: false,
@@ -31,8 +30,8 @@ export const addToSequence = (type: TaskType, task: Tasks, options: Partial<Step
   ))
 }
 
-const getContracts = () => {
-  const $signer = get(signer)
+const getContracts = async () => {
+  const $signer = await get(signer)
   const $chainId = get(chainId)
   if (!$signer || !$chainId) {
     throw new Error('not connected to wallet')
@@ -40,43 +39,44 @@ const getContracts = () => {
   return all($chainId, $signer)
 }
 
+// all methods called here must be write otherwise a tx will be called on a view method
 const _callOnContracts = async (
   contracts: AllContracts,
   step: Step,
-  rpcMethod: RpcMethods = 'functions',
-  overrides: ethers.CallOverrides = {},
+  rpcMethod: RpcMethods = 'send',
+  overrides: ethers.Overrides = {},
 ) => {
   if (rpcMethod === 'accessList') {
     throw new Error('internal call on access list not supported')
   }
-  const extra: ethers.CallOverrides[] = []
+  let extra: [ethers.Overrides] | [] = []
   if (!_.isEmpty(overrides)) {
-    extra.push(overrides)
+    extra = [overrides]
   }
   if (step.type === TaskType.start) {
     const task = step.task as StakeStartStep
-    return contracts.stakeManager[rpcMethod].stakeStart(
-      task.amount as ethers.BigNumberish,
+    return contracts.stakeManager.stakeStart[rpcMethod](
+      task.amount as bigint,
       task.lockedDays,
       ...extra,
     )
   } else if (step.type === TaskType.approval) {
     const task = step.task as ApprovalStep
-    return contracts.hex[rpcMethod].approve(
+    return contracts.hex.approve[rpcMethod](
       task.spender,
       task.consumed - task.allowance,
       ...extra,
     )
   } else if (step.type === TaskType.depositHsi) {
     const task = step.task as DepositHsiStep
-    return contracts.existingStakeManager[rpcMethod].depositHsi(
+    return contracts.existingStakeManager.depositHsi[rpcMethod](
       task.tokenId,
       task.settingsEncoded,
       ...extra,
     )
   } else if (step.type === TaskType.withdrawHsi) {
     const task = step.task as WithdrawStep
-    return contracts.existingStakeManager[rpcMethod].withdrawHsi(
+    return contracts.existingStakeManager.withdrawHsi[rpcMethod](
       task.stake.custodian, // hsi address
       ...extra,
     )
@@ -88,11 +88,11 @@ let useAccessList = true
 const callOnContracts = async (
   contracts: AllContracts,
   step: Step,
-  rpcMethod: RpcMethods = 'functions',
-  overrides?: ethers.CallOverrides,
+  rpcMethod: RpcMethods = 'send',
+  overrides?: ethers.Overrides,
 ) => {
   if (rpcMethod === 'accessList') {
-    const tx = await _callOnContracts(contracts, step, 'populateTransaction') as ethers.PopulatedTransaction
+    const tx = await _callOnContracts(contracts, step, 'populateTransaction') as ethers.Transaction
     const $provider = get(provider)
     if (!$provider) throw new Error('unable to access provider')
     if (!useAccessList) return createAccessListFromDebug($provider, contracts, step, tx)
@@ -106,7 +106,7 @@ const callOnContracts = async (
 }
 
 type AccessListResponse = {
-  accessList: AccessListish;
+  accessList: ethers.AccessList;
   gasUsed: bigint;
 }
 
@@ -116,10 +116,10 @@ export const defaultAccessListResponse: AccessListResponse = {
 }
 
 const createAccessListFromDebug = async (
-  $provider: ethers.providers.Web3Provider,
+  $provider: ethers.BrowserProvider,
   contracts: AllContracts,
   step: Step,
-  tx: ethers.PopulatedTransaction,
+  tx: ethers.Transaction,
 ) : Promise<AccessListResponse> => {
   // console.log(tx)
   // const debug = await $provider.send('debug_traceCall', [tx]).catch(() => null)
@@ -130,15 +130,14 @@ const createAccessListFromDebug = async (
 }
 
 export const estimateGas = async (step: Step) => {
-  const contracts = getContracts()
+  const contracts = await getContracts()
   let accessListResponse = {
     ...defaultAccessListResponse,
   }
   if (step.optimize) {
     accessListResponse = await callOnContracts(contracts, step, 'accessList') as AccessListResponse
   }
-  const gasUsedResponse = await callOnContracts(contracts, step, 'estimateGas') as ethers.BigNumber
-  const gasUsed = gasUsedResponse.toBigInt()
+  const gasUsed = await callOnContracts(contracts, step, 'estimateGas')
   return {
     gasUsed,
     optimized: accessListResponse,
@@ -273,15 +272,17 @@ export const executeList = async ($group: TaskGroup) => {
       if (!tx) return
       const receipt = await tx.wait()
       $group.items.forEach(removeFromSequence)
-      console.log('tx mined %o', receipt.transactionHash)
+      const hash = receipt?.hash
+      console.log('tx mined %o', hash)
       await backend.clearCache({
         chainId: get(chainId),
         account: get(address),
-        hash: receipt.transactionHash,
+        hash: hash,
       })
+      return true
     }).catch((err) => {
-      console.log(err)
-      throw err
+      // console.log(err.reason)
+      return false
     })
 }
 
@@ -290,7 +291,7 @@ export const executeListOfTasks = async ($group: TaskGroup) => {
   if (invalid) {
     return null
   }
-  const $signer = get(signer)
+  const $signer = await get(signer)
   const $chainId = get(chainId)
   if (!$signer || !$chainId) {
     throw new Error('not connected to wallet')
@@ -299,11 +300,11 @@ export const executeListOfTasks = async ($group: TaskGroup) => {
   if (items.length === 1 && useOptimizedPath(items[0])) {
     // do not wrap in a multicall - call direct
     const [item] = items
-    return callOnContracts(contracts, item, 'functions') as Promise<ethers.ContractTransaction>
+    return callOnContracts(contracts, item, 'send') as Promise<ethers.ContractTransactionResponse>
   }
-  const calldata = items.map((step) => getCalldataFromTask(contracts, step))
+  const calldata = await Promise.all(items.map((step) => getCalldataFromTask(contracts, step)))
   const overrides = {
-    gasLimit: 10_000_000,
+    // gasLimit: 10_000_000,
   }
   switch (contract) {
     case ContractType.ExistingStakeManager:
@@ -322,6 +323,8 @@ export const getCalldataFromTask = (contracts: AllContracts, step: Step) => {
     return getCalldataFromDepositHsiTask(contracts.existingStakeManager, step)
   } else if (step.type === TaskType.withdrawHsi) {
     return getCalldataFromWithdrawHsiTask(contracts.existingStakeManager, step)
+  } else if (step.type === TaskType.endStake) {
+    return getCalldataFromEndStakeTask(contracts.existingStakeManager, step)
   }
   throw new Error('unknown group')
 }
@@ -355,6 +358,21 @@ const getCalldataFromWithdrawHsiTask = async (existingStakeManager: ExistingStak
   ])
 }
 
+const getCalldataFromEndStakeTask = (existingStakeManager: ExistingStakeManager, step: Step) => {
+  const task = step.task as EndStep
+  const ownerIsPerpetual = addresses.perpetuals.has(task.stake.owner)
+  if (ownerIsPerpetual) {
+    return existingStakeManager.interface.encodeFunctionData('stakeEndAs', [
+      get(address), // reward to self
+      task.stake.owner,
+      task.stake.stakeId,
+    ])
+  }
+  return existingStakeManager.interface.encodeFunctionData('hsiStakeEndMany', [
+    [task.stake.custodian],
+  ])
+}
+
 const getCalldataFromStartTask = async (stakeManager: StakeManager, step: Step) => {
   const task = step.task as StakeStartStep
   const {
@@ -363,7 +381,7 @@ const getCalldataFromStartTask = async (stakeManager: StakeManager, step: Step) 
     settings,
   } = task
   const encodedSettings = await stakeManager.encodeSettings(settings)
-    .catch((err) => {
+    .catch((err: any) => {
       console.log(err)
       throw err
     })

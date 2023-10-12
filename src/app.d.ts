@@ -111,7 +111,7 @@ declare module 'knex/types/tables' {
 }
 declare global {
   interface Window {
-    ethereum: import('ethers').providers.ExternalProvider;
+    ethereum: import('ethers').ExternalProvider;
   }
 }
 import type { SvelteComponentTyped } from "svelte";

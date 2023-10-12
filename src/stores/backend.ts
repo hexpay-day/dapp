@@ -61,7 +61,7 @@ export const create712Message = {
       name: 'HexPay.Day',
       version: '1',
       chainId,
-      verifyingContract: ethers.constants.AddressZero,
+      verifyingContract: ethers.ZeroAddress,
     },
     message: {
       // the owner of this stake id must be the address

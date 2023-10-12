@@ -8,8 +8,10 @@
     Input,
   } from 'flowbite-svelte';
   import { DateInput } from 'date-picker-svelte'
-  import IconAddressBook from '@tabler/icons-svelte/dist/svelte/icons/IconAddressBook.svelte'
-  import IconPlus from '@tabler/icons-svelte/dist/svelte/icons/IconPlus.svelte'
+  import {
+    IconPlus,
+    IconAddressBook,
+  } from '@tabler/icons-svelte';
   import * as filtersStore from '../stores/filters'
 	import _ from 'lodash';
   import { page } from '$app/stores';
@@ -57,6 +59,7 @@
     offset: number;
   }
   const endUrl = (params: Params) => {
+    console.log(params)
     return `/${params.chainId}/end/${params.day}/${params.offset}`
   }
   export let day = '0'
@@ -164,7 +167,7 @@
       </ButtonGroup>
     </div>
     <Button
-      disabled={$address === ethers.constants.AddressZero || !!$owners.find((owner) => owner.hash === ethers.utils.getAddress($address))}
+      disabled={$address === ethers.ZeroAddress || !!$owners.find((owner) => owner.hash === ethers.getAddress($address))}
       on:click={() => filtersStore.addAddressToOwnerRaw($address, true)}>Show Own</Button>
   </div>
 </div>

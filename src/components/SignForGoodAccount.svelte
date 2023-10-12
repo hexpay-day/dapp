@@ -5,7 +5,7 @@
 	import { Button, Spinner } from "flowbite-svelte";
 	import { createEventDispatcher } from "svelte";
 	import ConnectWallet from "./ConnectWallet.svelte";
-  const { chainId, connected } = web3Store
+  const { chainId, connected, address } = web3Store
   const dispatch = createEventDispatcher()
   let sending = false
   export let stake!: types.Stake
@@ -39,7 +39,7 @@
 </script>
 <div class="flex mx-2">
   {#if $connected}
-    {#if !stake.requestedGoodAccounting}
+    {#if !stake.requestedGoodAccounting && stake.owner === $address}
       <Button on:click={signAndSend}>Request</Button>
     {/if}
   {:else}

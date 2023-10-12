@@ -2,20 +2,20 @@ import type * as aTypes from '@hexpayday/stake-manager/artifacts/types'
 import * as ethers from 'ethers'
 import * as abis from './abis'
 import * as addresses from './addresses'
-import * as ERC20Artifact from '@hexpayday/stake-manager/artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json'
-import type { ERC20 } from '@hexpayday/stake-manager/artifacts/types/@openzeppelin/contracts/token/ERC20'
+import * as ERC20Artifact from '@hexpayday/stake-manager/artifacts/solmate/src/tokens/ERC20.sol/ERC20.json'
+import type { ERC20 } from '@hexpayday/stake-manager/artifacts/types/solmate/src/tokens/ERC20'
 
 import * as types from '../types'
 import * as providers from './providers'
 
 export const all = (
   chainId: number,
-  signer: null | ethers.Signer | ethers.providers.BaseProvider,
+  signer: null | ethers.Signer | ethers.Provider,
 ) => {
   const provider = providers.getByChainId(chainId)
   return {
-    hex: new ethers.Contract(addresses.Hex, abis.IHex.abi, signer || provider) as unknown as aTypes.IHEX,
-    hsim: new ethers.Contract(addresses.HSIM, abis.IHEXStakeInstanceManager.abi, signer || provider) as unknown as aTypes.IHEXStakeInstanceManager,
+    hex: new ethers.Contract(addresses.Hex, abis.IHex.abi, signer || provider) as unknown as aTypes.HEX,
+    hsim: new ethers.Contract(addresses.HSIM, abis.IHEXStakeInstanceManager.abi, signer || provider) as unknown as aTypes.HEXStakeInstanceManager,
     stakeManager: new ethers.Contract(addresses.StakeManager, abis.StakeManager.abi, signer || provider) as unknown as aTypes.StakeManager,
     existingStakeManager: new ethers.Contract(addresses.ExistingStakeManager, abis.ExistingStakeManager.abi, signer || provider) as unknown as aTypes.ExistingStakeManager,
     multicall: new ethers.Contract(addresses.Multicall, abis.Multicall.abi, signer || provider) as unknown as aTypes.IMulticall3,
@@ -26,7 +26,7 @@ export const all = (
 export const erc20 = (chainId: number, hash: string) => {
   const provider = providers.getByChainId(chainId)
   const abi = ERC20Artifact.abi
-  return new ethers.Contract(hash, abi, provider) as ERC20
+  return new ethers.Contract(hash, abi, provider) as unknown as ERC20
 }
 
 export const options = {
@@ -45,4 +45,14 @@ export const options = {
     types.TimelineTypes.END,
     types.TimelineTypes.UPDATE,
   ],
+  notOwned: {
+    hsi: [
+      types.TimelineTypes.GOOD_ACCOUNT,
+      types.TimelineTypes.END,
+    ],
+    perpetuals: [
+      types.TimelineTypes.GOOD_ACCOUNT,
+      types.TimelineTypes.END,
+    ],
+  },
 }

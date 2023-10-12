@@ -12,5 +12,5 @@
 </script>
 <div class="flex flex-row">
   <Label defaultClass="flex flex-row">Default<Toggle class="ml-3" bind:checked={checked} />Max (Balance)</Label>
-  <span class="ml-4">{numberWithCommas(ethers.utils.formatUnits(checked ? max : amount, decimals))}</span>
+  <span class="ml-4">{numberWithCommas(ethers.formatUnits(checked ? max : amount, decimals))}</span>
 </div>

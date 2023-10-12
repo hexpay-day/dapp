@@ -1,5 +1,5 @@
 import type { EncodableSettings } from "@hexpayday/stake-manager/artifacts/types";
-import type { BigNumberish } from "ethers";
+import type { bigint } from "ethers";
 
 export type Stake = {
   owner: string;
@@ -156,7 +156,7 @@ export enum FundingOrigin {
 export type StakeStartStep = {
   // fund from contract or from balance
   // assume from balance for now
-  amount: BigNumberish | null;
+  amount: bigint | null;
   for: string;
   lockedDays: string;
   settings: EncodableSettings.SettingsStruct;
@@ -186,7 +186,11 @@ export type GoodAccountStep = {
   stake: Stake;
 }
 
-export type Tasks = ApprovalStep | StakeStartStep | DepositHsiStep | GoodAccountStep | WithdrawStep;
+export type EndStep = {
+  stake: Stake;
+}
+
+export type Tasks = ApprovalStep | StakeStartStep | DepositHsiStep | GoodAccountStep | WithdrawStep | EndStep;
 
 export enum ContractType {
   Invalid = 'Invalid',

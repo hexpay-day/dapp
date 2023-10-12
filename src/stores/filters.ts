@@ -37,7 +37,7 @@ export const addAddressToOwnerRaw = async (_hash: string, submission: boolean) =
   }
   if (hash.startsWith('0x') && hash.length === 42) {
     // assume it is an address - not ens
-    const isValid = ethers.utils.isAddress(hash)
+    const isValid = ethers.isAddress(hash)
     isOwnerValueValid.set(isValid)
     if (isValid) {
       ens = await p.lookupAddress(hash).catch(() => null)
@@ -49,7 +49,7 @@ export const addAddressToOwnerRaw = async (_hash: string, submission: boolean) =
       // lookup owner address
       ens = hash
       hash = await p.resolveName(ens).catch(() => hash) || hash
-      isOwnerValueValid.set(ethers.utils.isAddress(hash))
+      isOwnerValueValid.set(ethers.isAddress(hash))
     } else {
       isOwnerValueValid.set(false)
     }
@@ -61,7 +61,7 @@ export const addAddressToOwnerRaw = async (_hash: string, submission: boolean) =
     return
   }
   const address = {
-    hash: ethers.utils.getAddress(hash),
+    hash: ethers.getAddress(hash),
     ens,
   }
   removeOwner(address)

@@ -4,11 +4,12 @@
   import { page } from "$app/stores";
 	import { get } from "svelte/store";
 	import { onDestroy } from "svelte";
-  const unsub = page.subscribe(($page) => {
+  const { windowIsAvailable } = web3Store
+  const unsub = $windowIsAvailable ? page.subscribe(($page) => {
     web3Store.chainId.set($page.data.chainId)
     if (!get(web3Store.intendsToConnect)) return
     web3Store.changeNetworks($page.data.chainId)
-  })
+  }) : () => {}
   onDestroy(unsub)
 </script>
 

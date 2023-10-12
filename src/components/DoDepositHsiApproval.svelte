@@ -15,13 +15,14 @@
   let sending = false
   export let existingStakeManagerIsOwner = false
   export let stake!: types.Stake
-  $: all = contracts.all($chainId, $signer || null)
+  $: all = Promise.resolve().then(async () => contracts.all($chainId, await $signer))
   const mounted = new Promise((resolve) => onMount(() => resolve(null)))
   let showSpinner = false
   const approveAll = async (approve: boolean) => {
     showSpinner = true
     try {
-      const tx = await all.hsim.setApprovalForAll(addresses.ExistingStakeManager, approve)
+      const { hsim } = await all
+      const tx = await hsim.setApprovalForAll(addresses.ExistingStakeManager, approve)
       await tx.wait()
       approvalChecksPromise = doApprovalChecks()
     } finally {
@@ -31,18 +32,20 @@
   const approveSingle = async (tokenId: bigint, approve: boolean) => {
     showSpinner = true
     try {
-      const operator = approve ? addresses.ExistingStakeManager : ethers.constants.AddressZero
-      const tx = await all.hsim.approve(operator, tokenId)
+      const { hsim } = await all
+      const operator = approve ? addresses.ExistingStakeManager : ethers.ZeroAddress
+      const tx = await hsim.approve(operator, tokenId)
       await tx.wait()
       approvalChecksPromise = doApprovalChecks()
     } finally {
       showSpinner = false
     }
   }
-  const parseResults = ([isApprovedForAll, getApproved]: IMulticall3.ResultStructOutput[]) => {
+  const parseResults = async ([isApprovedForAll, getApproved]: IMulticall3.ResultStructOutput[]) => {
+    const { hsim } = await all
     return [
-      all.hsim.interface.decodeFunctionResult('isApprovedForAll', isApprovedForAll.returnData)[0],
-      ethers.utils.getAddress(all.hsim.interface.decodeFunctionResult('getApproved', getApproved.returnData)[0]) === ethers.utils.getAddress(addresses.ExistingStakeManager)
+      hsim.interface.decodeFunctionResult('isApprovedForAll', isApprovedForAll.returnData)[0],
+      ethers.getAddress(hsim.interface.decodeFunctionResult('getApproved', getApproved.returnData)[0]) === ethers.getAddress(addresses.ExistingStakeManager)
     ]
   }
   const doApprovalChecks = async (): Promise<[bigint, boolean, boolean]> => {
@@ -55,12 +58,13 @@
       : $address
     const tokenIds = await rpcQueries.getTokenIdsUnder($chainId, hexAddress)
     const tokenIdToHsiAddress = await rpcQueries.getCustodianToTokenIds($chainId, tokenIds)
-    const tokenId = tokenIdToHsiAddress.get(ethers.utils.getAddress(stake.custodian)) as bigint
+    const tokenId = tokenIdToHsiAddress.get(ethers.getAddress(stake.custodian)) as bigint
+    const { hsim, multicall } = await all
     const approvalChecks = [
-      all.hsim.interface.encodeFunctionData('isApprovedForAll', [
+      hsim.interface.encodeFunctionData('isApprovedForAll', [
         hexAddress, addresses.ExistingStakeManager,
       ]),
-      all.hsim.interface.encodeFunctionData('getApproved', [
+      hsim.interface.encodeFunctionData('getApproved', [
         tokenId,
       ]),
     ].map((callData) => ({
@@ -69,7 +73,7 @@
       allowFailure: false,
       callData,
     }))
-    const [allApproved, singleApproved] = await all.multicall.callStatic.aggregate3(approvalChecks).then(parseResults)
+    const [allApproved, singleApproved] = await multicall.aggregate3.staticCall(approvalChecks).then(parseResults)
     return [tokenId, allApproved, singleApproved]
   }
   const addWithdrawToTimeline = () => {

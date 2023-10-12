@@ -3,9 +3,11 @@ import * as graphql from '../../../../../graphql'
 import _ from 'lodash'
 import * as web3Store from '../../../../../stores/web3'
 import * as queries from '../../../../../stores/queries'
+import * as rpcQueries from '../../../../../stores/rpc-queries'
 import { db } from '../../../../../db'
 import { tableNames } from '../../../../../db/utils'
 import { args } from '../../../../../config'
+import { getByChainId } from '../../../../../stores/providers'
 
 export const ssr = false
 
@@ -14,23 +16,40 @@ export const load = async ({ params }: types.StakesLoadParams): Promise<types.St
   const dayParam = +params.day
   const count = +params.count
   let day = dayParam
-  if (!web3Store.chains.has(chainId)) {
-    return {
-      stakes: [],
-      chainId,
-      day,
-      count,
+  let tmpChainId!: number
+  if (!web3Store.chains.has(chainId) || chainId === 31_337) {
+    let provider = getByChainId(chainId)
+    const latest = await provider.getBlock('latest')
+    const lastUnknown = latest?.number as number - 100_000
+    const lastSolidBlock = await provider.getBlock(lastUnknown)
+    for (const [chainId] of [...web3Store.chains.entries()]) {
+      provider = getByChainId(chainId)
+      const block = await provider.getBlock(lastSolidBlock?.parentHash as string)
+      if (block) {
+        tmpChainId = chainId
+        break
+      }
     }
+    if (!tmpChainId) {
+      return {
+        chainId,
+        stakes: [],
+        day: dayParam,
+        count,
+      }
+    }
+  } else {
+    tmpChainId = chainId
   }
   const endDay = day + count
   let all: types.StakesEndingOnDay[] = []
   do {
-    const allInDay = await queries.cacheByDay.fetch(`${chainId}-${day}`) as types.StakesEndingOnDay[]
+    const allInDay = await queries.cacheByDay.fetch(`${tmpChainId}-${day}`) as types.StakesEndingOnDay[]
     day++
     all = all.concat(allInDay)
   } while (day <= endDay);
   const stakeIds = all.map(({ stakeId }) => +stakeId)
-  const hedronClient = graphql.hedronClients.get(chainId)
+  const hedronClient = graphql.hedronClients.get(tmpChainId)
   let hexstakes: types.HsiStatusResponse["hexstakes"] = []
   if (hedronClient) {
     const { hexstakes: hedronHexStakes } = await hedronClient.request<types.HsiStatusResponse>(graphql.queries.STAKE_HSI_STATUS, {
@@ -43,14 +62,14 @@ export const load = async ({ params }: types.StakesLoadParams): Promise<types.St
     .select('*')
     .whereIn('stakeId', validHexStakeIds)
   const hasSignatures = new Set<string>(_.map(signatures, 'stakeId'))
-  const extraInfo = new Map<number, types.ExtraInfo>(hexstakes.map(({ stakeId, owner, hdrnHsiAddress, isHdrnHsiTokenized }) => [
-    +stakeId, {
+  const extraInfo = new Map<bigint, types.ExtraInfo>(hexstakes.map(({ stakeId, owner, hdrnHsiAddress, isHdrnHsiTokenized }) => [
+    BigInt(stakeId), {
       requestedGoodAccounting: hasSignatures.has(stakeId),
       hsiAddress: hdrnHsiAddress,
       owner: owner.id.toLowerCase(),
       tokenized: isHdrnHsiTokenized,
   }]))
-  const stakes = queries.toStake(all, extraInfo)
+  const stakes = rpcQueries.toStake(all, extraInfo)
   return {
     chainId,
     stakes,

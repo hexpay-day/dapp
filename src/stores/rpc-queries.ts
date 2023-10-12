@@ -1,16 +1,16 @@
 import type * as types from '../types'
 import * as ethers from 'ethers'
 import _ from 'lodash'
-import type * as aTypes from '@hexpayday/stake-manager/artifacts/types/contracts/interfaces/IHEX'
+import type * as aTypes from '@hexpayday/stake-manager/artifacts/types/contracts/interfaces/HEX'
 import * as contracts from './contracts'
 import * as addresses from './addresses'
 import type { IMulticall3 } from '@hexpayday/stake-manager/artifacts/types'
 
 export const toStake = (
   all: types.StakesEndingOnDay[],
-  extraInfo = new Map<number, types.ExtraInfo>(),
+  extraInfo = new Map<bigint, types.ExtraInfo>(),
 ) => all.map<types.Stake>((stake) => {
-  const extra = extraInfo.get(+stake.stakeId)
+  const extra = extraInfo.get(BigInt(stake.stakeId))
   const isHedron = !!extra && !!extra.hsiAddress
   return {
     lockedDay: +stake.startDay,
@@ -20,8 +20,8 @@ export const toStake = (
     tokenized: !!extra?.tokenized,
     requestedGoodAccounting: !!extra?.requestedGoodAccounting,
     endDay: +stake.startDay + +stake.stakedDays,
-    custodian: ethers.utils.getAddress(stake.stakerAddr),
-    owner: stake.owner || (ethers.utils.getAddress(isHedron ? extra.owner as string : stake.stakerAddr)),
+    custodian: ethers.getAddress(stake.stakerAddr),
+    owner: stake.owner || (ethers.getAddress(isHedron ? extra.owner as string : stake.stakerAddr)),
   }
 })
 
@@ -43,7 +43,7 @@ export const stakesFromResults = (account: string, stakerAddr: string, list: aTy
 export const getTokenIdsUnder = async (chainId: number, $account: string) => {
   const all = contracts.all(chainId, null)
   const tokenizedHsiCount = await all.hsim.balanceOf($account)
-  const tokenizedHsiCalls = _.range(0, tokenizedHsiCount.toNumber()).map((index) => ({
+  const tokenizedHsiCalls = _.range(0, Number(tokenizedHsiCount)).map((index) => ({
     value: 0,
     target: addresses.HSIM,
     allowFailure: false,
@@ -51,9 +51,9 @@ export const getTokenIdsUnder = async (chainId: number, $account: string) => {
       $account, index,
     ]),
   }))
-  const tokenResults = await all.multicall.callStatic.aggregate3(tokenizedHsiCalls)
+  const tokenResults = await all.multicall.aggregate3.staticCall(tokenizedHsiCalls)
   return tokenResults.map((result) => (
-    (all.hsim.interface.decodeFunctionResult('tokenOfOwnerByIndex', result.returnData)[0] as ethers.BigNumber).toBigInt()
+    all.hsim.interface.decodeFunctionResult('tokenOfOwnerByIndex', result.returnData)[0] as bigint
   ))
 }
 
@@ -65,9 +65,9 @@ export const getCustodianToTokenIds = async (chainId: number, tokenIds: bigint[]
     target: addresses.HSIM,
     callData: all.hsim.interface.encodeFunctionData('hsiToken', [token]),
   }))
-  const hsiAddresesResults = await all.multicall.callStatic.aggregate3(hsiAddressesCalls)
+  const hsiAddresesResults = await all.multicall.aggregate3.staticCall(hsiAddressesCalls)
   const hsiAddresses = hsiAddresesResults.map((result) => (
-    ethers.utils.getAddress(all.hsim.interface.decodeFunctionResult('hsiToken', result.returnData)[0] as string)
+    ethers.getAddress(all.hsim.interface.decodeFunctionResult('hsiToken', result.returnData)[0] as string)
   ))
   return new Map<string, bigint>(_.zip(hsiAddresses, tokenIds) as [string, bigint][])
 }
@@ -77,7 +77,7 @@ export const limit = 1_000
 export const loadStakeLists = async (chainId: number, account: string) => {
   const all = contracts.all(chainId, null)
   const stakeCount = await all.hex.stakeCount(account)
-  const calls = _.range(0, stakeCount.toNumber()).map((index) => ({
+  const calls = _.range(0, Number(stakeCount)).map((index) => ({
     target: addresses.Hex,
     allowFailure: false,
     value: 0,
@@ -87,7 +87,7 @@ export const loadStakeLists = async (chainId: number, account: string) => {
     ]),
   }))
   const stakeChunks = await Promise.all(_.chunk(calls, limit).map((clls) => (
-    all.multicall.callStatic.aggregate3(clls)
+    all.multicall.aggregate3.staticCall(clls)
   )))
   return _.flatten(stakeChunks).map((result) => (
     all.hex.interface.decodeFunctionResult('stakeLists', result.returnData)[0] as unknown as aTypes.IUnderlyingStakeable.StakeStoreStructOutput
@@ -108,7 +108,7 @@ export const loadHsiFrom = async (chainId: number, account: string) => {
     callHsim(all.hsim.interface.encodeFunctionData('hsiCount', [account])),
     callHsim(all.hsim.interface.encodeFunctionData('balanceOf', [account])),
   ]
-  const countResults = await all.multicall.callStatic.aggregate3(countCalls)
+  const countResults = await all.multicall.aggregate3.staticCall(countCalls)
   const [detokenizedCount, tokenizedCount] = countResults.map((result) => BigInt(result.returnData))
   const detokenizedCalls = _.range(0, Number(detokenizedCount)).map((index) => (
     callHsim(all.hsim.interface.encodeFunctionData('hsiLists', [
@@ -123,22 +123,22 @@ export const loadHsiFrom = async (chainId: number, account: string) => {
     ]))
   ))
   const allCalls = detokenizedCalls.concat(tokenizedCalls)
-  const allResults = await all.multicall.callStatic.aggregate3(allCalls)
+  const allResults = await all.multicall.aggregate3.staticCall(allCalls)
   // for whatever reason, index is not given during partition
   const detokenizedStakes = allResults.slice(0, detokenizedCalls.length) as IMulticall3.ResultStructOutput[]
   const tokenizedStakes = allResults.slice(detokenizedCalls.length) as IMulticall3.ResultStructOutput[]
-  const detokenizedAddresses = detokenizedStakes.map((result) => ethers.utils.getAddress(`0x${result.returnData.slice(-40)}`))
+  const detokenizedAddresses = detokenizedStakes.map((result) => ethers.getAddress(`0x${result.returnData.slice(-40)}`))
   const tokenIds = tokenizedStakes.map((result) => BigInt(result.returnData))
   const tokenHsiCalls = tokenIds.map((tokenId) => (
     callHsim(all.hsim.interface.encodeFunctionData('hsiToken', [tokenId]))
   ))
-  const tokenHsiResults = tokenHsiCalls ? await all.multicall.callStatic.aggregate3(tokenHsiCalls) : [] as IMulticall3.ResultStructOutput[]
-  const tokenizedHsi = tokenHsiResults.map((result) => ethers.utils.getAddress(`0x${result.returnData.slice(-40)}`))
+  const tokenHsiResults = tokenHsiCalls ? await all.multicall.aggregate3.staticCall(tokenHsiCalls) : [] as IMulticall3.ResultStructOutput[]
+  const tokenizedHsi = tokenHsiResults.map((result) => ethers.getAddress(`0x${result.returnData.slice(-40)}`))
   const allHsi = detokenizedAddresses.concat(tokenizedHsi)
   const stakeListCalls = allHsi.map((hsi) => callHex(
     all.hex.interface.encodeFunctionData('stakeLists', [hsi, 0])
   ))
-  const stakeListsResults = await all.multicall.callStatic.aggregate3(stakeListCalls)
+  const stakeListsResults = await all.multicall.aggregate3.staticCall(stakeListCalls)
   const stakesResults = stakeListsResults.map((result) => (all.hex.interface.decodeFunctionResult('stakeLists', result.returnData))[0] as unknown as aTypes.IUnderlyingStakeable.StakeStoreStructOutput)
   return {
     stakes: stakesResults,

@@ -9,11 +9,11 @@ address.subscribe(($address) => {
 })
 
 const validateAddress = (acc: string) => {
-  return ethers.utils.isAddress(acc)
+  return ethers.isAddress(acc)
 }
 export const validAccount = derived([account], ([$account]) => {
   return validateAddress($account)
 })
 export const validatedAccount = derived([account], ([$account]) => {
-  return ethers.utils.isAddress($account) ? $account : null
+  return ethers.isAddress($account) ? $account : null
 })

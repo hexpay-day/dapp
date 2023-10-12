@@ -36,7 +36,7 @@ export const log = (eventId: string, blockHeight: number, transactionHash: strin
 
 export const address = (networkId: string, addressHash: string) => hash([
   networkId,
-  ethers.utils.getAddress(addressHash),
+  ethers.getAddress(addressHash),
 ])
 
 export const transaction = (networkId: string, transactionHash: string) => hash([

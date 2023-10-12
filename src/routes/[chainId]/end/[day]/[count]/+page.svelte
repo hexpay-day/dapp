@@ -11,7 +11,7 @@
   $: filteredStakeStore.all.set($page.data.stakes)
 </script>
 
-<div class="flex max-w-5xl flex-col m-auto">
+<div class="flex max-w-5xl w-full flex-col m-auto">
   <Filters day={$page.data.day} />
   <FilteredStakes />
 </div>

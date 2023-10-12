@@ -24,11 +24,11 @@ export const actions = {
     if (!chainId || !hash || !account) return { success: false, message: 'invalid data' }
     const provider = getByChainId(chainId)
     const receipt = await provider.getTransactionReceipt(hash)
-    if (!receipt || ethers.utils.getAddress(receipt.from) !== account) return { success: false, message: 'data is not yet available' }
+    if (!receipt || ethers.getAddress(receipt.from) !== account) return { success: false, message: 'data is not yet available' }
     const all = contracts.all(chainId, null)
     const logs = _(receipt.logs).map((log) => {
       try {
-        return all.hsim.interface.parseLog(log)
+        return all.hsim.interface.parseLog(log as any)
       } catch (err) {}
     }).compact().value()
     const validated = _.find(logs, ({ name }) => (

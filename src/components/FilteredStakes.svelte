@@ -1,11 +1,16 @@
 <script lang="ts">
-  import SvelteTable from 'svelte-table'
+  import StakeTable from './StakeTable.svelte'
   import * as filteredStakesStore from '../stores/filtered-stakes'
-  import EndSettings from './EndSettings.svelte'
-  import { iconExpanded, iconExpand, renderIcon } from '../stores/filtered-stakes';
+  import MaintainSettings from './MaintainSettings.svelte'
+  import { options } from '../stores/contracts'
+  // import EndSettings from './EndSettings.svelte'
+  // import { iconExpanded, iconExpand, renderIcon } from '../stores/filtered-stakes';
   $: filtered = filteredStakesStore.filtered
 </script>
-
+<StakeTable title="Stakes" rows={$filtered} let:row>
+  <MaintainSettings stake={row} options={row.isHedron ? options.notOwned.hsi : options.notOwned.perpetuals} />
+</StakeTable>
+<!--
 <div>
   <SvelteTable
     rows={$filtered}
@@ -42,4 +47,4 @@
         </div>
       </svelte:fragment>
     </SvelteTable>
-</div>
+</div> -->

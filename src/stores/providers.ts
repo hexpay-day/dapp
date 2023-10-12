@@ -8,5 +8,5 @@ const urls = new Map<number, string>([
 
 export const getByChainId = (chainId: number) => {
   const url = urls.get(chainId)
-  return new ethers.providers.JsonRpcProvider(url, chainId)
+  return new ethers.JsonRpcProvider(url, chainId)
 }

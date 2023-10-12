@@ -73,8 +73,8 @@
   } = settingStore
   $: fetchData($chainId, $address)
   $: dateInputBoundValue = $dateInputValue
-  const id = _.uniqueId()
   let encodableSettings!: EncodableSettings.SettingsStruct
+  let useHexPayDayContract = true
   $: encodableSettings = encodableSettingsFromInputs({
     targetTip: $hexTipSelection,
     hedronTip: $hedronTipSelection,
@@ -95,22 +95,32 @@
   })
   $: settings = {
     // can flip this to be isolated if desired
-    contract: addresses.StakeManager || ethers.constants.AddressZero,
+    contract: useHexPayDayContract ? addresses.StakeManager || ethers.ZeroAddress : addresses.Hex,
     lockedDays: $lockedDays,
-    for: $validatedAccount || ethers.constants.AddressZero,
+    for: $validatedAccount || ethers.ZeroAddress,
     amount: $amountIsValid ? $amount : null,
     fundingFromAddress: $fundFromWallet,
-    useAdvancedSettings: $useAdvancedSettings,
+    useAdvancedSettings: useHexPayDayContract && $useAdvancedSettings,
     fundingOrigin: $fundFromWallet ? FundingOrigin.connected : (
       $startStakeFromUnattributed ? FundingOrigin.unattributed : FundingOrigin.deposited
     ),
     settings: encodableSettings,
   }
 </script>
-<div class="grid grid-cols-2 max-w-5xl m-auto gap-x-4">
-  {#if !$connected}
-    connect wallet before proceeding
-  {:else}
+{#if !$connected}
+<div class="flex justify-around">
+  connect wallet before proceeding
+</div>
+{:else}
+<div class="grid max-w-5xl m-auto w-full py-2">
+  <div class="grid grid-cols-2 align-middle">
+    <Label defaultClass="flex flex-row text-sm items-center font-medium">
+      <span class="mr-2 flex align-middle min-w-[120px]">Use {useHexPayDayContract ? 'hexpay.day' : 'go.hex.com'}</span>
+      <Toggle bind:checked={useHexPayDayContract} />
+    </Label>
+  </div>
+</div>
+<div class="grid grid-cols-2 max-w-5xl w-full m-auto gap-x-4">
   <div class="grid gap-4 col-span-2 grid-cols-2">
     <div class="flex flex-col flex-grow col-span-1">
       <div class="flex flex-row space-x-4 flex-grow">
@@ -177,7 +187,7 @@
                 max={$hexData.balance}
                 decimals={8}
                 on:update={(e) => amount.set(`${e.detail.value}`)}
-                text={$amountIsValid && $amount ? ethers.utils.formatUnits($amount, 8) : ''}
+                text={$amountIsValid && $amount ? ethers.formatUnits($amount, 8) : ''}
                 class="text-right text-base leading-[1.25rem]"
                 placeholder="1234.567" />
               <InputAddon>HEX</InputAddon>
@@ -235,5 +245,5 @@
       }} />
     </div>
   </div>
-  {/if}
 </div>
+{/if}

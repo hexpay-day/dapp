@@ -76,7 +76,7 @@ const validAmount = (amount: string) => {
     if (amount[amount.length - 1] === '.') {
       return false
     }
-    const parsed = ethers.utils.parseUnits(amount, 8).toBigInt()
+    const parsed = ethers.parseUnits(amount, 8)
     if (parsed === 0n) {
       return null
     }

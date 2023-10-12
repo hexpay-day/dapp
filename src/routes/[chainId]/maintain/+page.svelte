@@ -10,7 +10,7 @@
 	import MaintainSettings from '../../../components/MaintainSettings.svelte';
 	import _ from 'lodash';
 </script>
-<div class="flex flex-col max-w-5xl m-auto">
+<div class="flex flex-col max-w-5xl w-full m-auto">
   <div class="flex justify-between">
     <a href="/{$chainId || 0}/start">
       <Button>New Stake<span class="inline-block mx-1"><IconPlus /></span></Button>

@@ -12,7 +12,7 @@
 	import { get } from 'svelte/store';
   const dispatch = createEventDispatcher()
   const defaultTip = {
-    currency: ethers.constants.AddressZero,
+    currency: ethers.ZeroAddress,
     limit: 0n,
     numerator: 0n,
     denominator: 0n,

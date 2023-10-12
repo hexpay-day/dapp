@@ -1,7 +1,7 @@
 import { derived, get, readable, writable, type Writable } from "svelte/store";
 import * as contracts from './contracts'
 // import { onDestroy } from "svelte";
-import { signer } from "./web3";
+import { chainId, signer } from "./web3";
 import * as todos from './todo'
 
 export const targetDay = writable(1)
@@ -14,14 +14,11 @@ export const dayToIso = (day = 0n) => {
 }
 
 export const getCurrentDay = async () => {
-  const s = get(signer)
-  if (!s) {
-    return get(currentDay)
-  }
-  const mainnet = contracts.all(1, s)
+  const s = await get(signer)
+  const mainnet = contracts.all(get(chainId), s)
   const hexCurrentDay = await mainnet.hex.currentDay()
-  currentDay.update(() => hexCurrentDay.toNumber())
-  return hexCurrentDay.toNumber()
+  currentDay.update(() => Number(hexCurrentDay))
+  return Number(hexCurrentDay)
 }
 
 export const useISO = writable<boolean>(false)

@@ -1,13 +1,12 @@
 import _ from 'lodash'
 import { LRUCache } from 'lru-cache'
-import type * as aTypes from '@hexpayday/stake-manager/artifacts/types/contracts/interfaces/IHEX'
+import type * as aTypes from '@hexpayday/stake-manager/artifacts/types/contracts/interfaces/HEX'
 
 import type * as types from '../types'
 import * as contracts from './contracts'
 import * as addresses from './addresses'
 import * as graphql from '../graphql'
 import { ethers } from 'ethers'
-import type { IMulticall3 } from '@hexpayday/stake-manager/artifacts/types'
 import { db } from '../db'
 import { tableNames } from '../db/utils'
 import { args } from '../config'
@@ -33,7 +32,7 @@ export const getStakesFromChain = async (chainId: number, day: number) => {
     value: 0,
     callData: all.stakeManager.interface.encodeFunctionData('stakeIdToOwner', [stake.stakeId]),
   }))
-  const ownersResult = await all.multicall.callStatic.aggregate3(callsForOwner)
+  const ownersResult = await all.multicall.aggregate3.staticCall(callsForOwner)
   const owners = ownersResult.map((value) => `0x${value.returnData.slice(-40)}`)
   return stakes.map((stake, i) => ({
     ...stake,
@@ -54,7 +53,7 @@ export const onlyOwnedBy = (chainId: number, account: string, target: string) =>
     ]),
   }))
   const stakeChunks = await Promise.all(_.chunk(calls, limit).map((clls) => (
-    all.multicall.callStatic.aggregate3(clls)
+    all.multicall.aggregate3.staticCall(clls)
   )))
   return _(stakeChunks)
     .flatten()
@@ -91,10 +90,10 @@ export const loadHsiFrom = async (chainId: number, account: string) => {
   const allStakeIds = _.map(stakesResults, 'stakeId')
   const requested = await db(`${args.databaseSchema}.${tableNames.GOOD_ACCOUNT_SIGNATURE}`)
     .select('*')
-    .whereIn('stakeId', allStakeIds)
+    .whereIn('stakeId', allStakeIds.map((stakeId) => Number(stakeId)))
   const hasRequested = new Set<string>(_.map(requested, 'stakeId'))
-  const extraHsiInfo = new Map<number, types.ExtraInfo>(stakesResults.map((stake, index) => ([
-  +stake.stakeId, {
+  const extraHsiInfo = new Map<bigint, types.ExtraInfo>(stakesResults.map((stake, index) => ([
+  stake.stakeId, {
     hsiAddress: allHsi[index],
     owner: account,
     tokenized: tokenizedHsiSet.has(allHsi[index]),
@@ -127,9 +126,9 @@ export const getStakesFromChainUnderAccount = async (chainId: number, account: s
   ], (list) => _.map(list, 'stakeId'))
   const requested = await db(`${args.databaseSchema}.${tableNames.GOOD_ACCOUNT_SIGNATURE}`)
     .select('*')
-    .whereIn('stakeId', stakeIds)
+    .whereIn('stakeId', stakeIds.map((stakeId) => Number(stakeId)))
   const hasRequested = new Set<string>(_.map(requested, 'stakeId'))
-  const extraData = new Map<number, types.ExtraInfo>(stakeIds.map((stakeId) => ([
+  const extraData = new Map<bigint, types.ExtraInfo>(stakeIds.map((stakeId) => ([
     stakeId, {
       hsiAddress: null,
       owner: null,
@@ -209,7 +208,7 @@ const optionsByAddress: LRUCache.Options<string, types.Stake[], any> = {
     if (account === 'perpetuals') {
       return await loadStakesFromPerpetuals(+chainId)
     }
-    if (ethers.utils.isAddress(account)) {
+    if (ethers.isAddress(account)) {
       return await getAllUnderAccount(+chainId, account)
     }
     return []

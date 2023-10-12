@@ -4,7 +4,7 @@
 	import {
     IconChevronsRight, IconQuestionMark,
   } from "@tabler/icons-svelte"
-  import { queryParameters, ssp } from "sveltekit-search-params"
+  import { queryParam, ssp } from "sveltekit-search-params"
   import * as rpcQueries from '../stores/rpc-queries'
 	import {
     Button,
@@ -25,15 +25,20 @@
 	import { ethers } from "ethers"
 	import ConnectWallet from "./ConnectWallet.svelte"
 	import { renderIcon } from '../stores/filtered-stakes';
+	import { onMount } from 'svelte';
   const { chainId, address, connected } = web3Store
   export let stake!: types.Stake
   export let options!: types.TimelineTypes[]
-  $: existingStakeManagerIsOwner = ethers.utils.getAddress(stake.owner) === addresses.ExistingStakeManager
   let dropdownOpen = false
   let showCheckout = false
   let buttonDisabled = false
   let checkoutReversable = false
   const { TimelineTypes } = types
+  const timelineTypeQueryParam = queryParam('selected', ssp.string(), {
+    pushHistory: false,
+    debounceHistory: 3_000,
+  })
+  $: existingStakeManagerIsOwner = ethers.getAddress(stake.owner) === addresses.ExistingStakeManager
   const defaultClass = (disabled: boolean) => (
     classnames('font-medium py-2 pl-4 pr-6 text-md hover:bg-gray-100 dark:hover:bg-gray-600 w-full text-left flex', {
       'cursor-not-allowed': disabled,
@@ -42,19 +47,13 @@
   const selectTokenizeHsi = () => {
     showCheckout = true
     dropdownOpen = false
-    storage.update(($storage) => ({
-      ...$storage,
-      selected: TimelineTypes.TOKENIZE_HSI,
-    }))
+    timelineTypeQueryParam.set(TimelineTypes.TOKENIZE_HSI)
     buttonDisabled = true
   }
   const selectDepositHsi = () => {
     showCheckout = true
     dropdownOpen = false
-    storage.update(($storage) => ({
-      ...$storage,
-      selected: TimelineTypes.DEPOSIT_HSI,
-    }))
+    timelineTypeQueryParam.set(TimelineTypes.DEPOSIT_HSI)
     buttonDisabled = false
     checkoutReversable = existsInSequence({
       type: taskTypeFromTimelineType(TimelineTypes.DEPOSIT_HSI),
@@ -66,10 +65,7 @@
   const selectWithdrawHsi = () => {
     showCheckout = true
     dropdownOpen = false
-    storage.update(($storage) => ({
-      ...$storage,
-      selected: TimelineTypes.WITHDRAW_HSI,
-    }))
+    timelineTypeQueryParam.set(TimelineTypes.WITHDRAW_HSI)
     buttonDisabled = false
     checkoutReversable = existsInSequence({
       type: taskTypeFromTimelineType(TimelineTypes.WITHDRAW_HSI),
@@ -81,19 +77,13 @@
   const selectUpdateStake = () => {
     showCheckout = true
     dropdownOpen = false
-    storage.update(($storage) => ({
-      ...$storage,
-      selected: TimelineTypes.UPDATE,
-    }))
+    timelineTypeQueryParam.set(TimelineTypes.UPDATE)
     buttonDisabled = true
   }
   const selectGoodAccount = () => {
     showCheckout = true
     dropdownOpen = false
-    storage.update(($storage) => ({
-      ...$storage,
-      selected: TimelineTypes.GOOD_ACCOUNT,
-    }))
+    timelineTypeQueryParam.set(TimelineTypes.GOOD_ACCOUNT)
     buttonDisabled = false
     checkoutReversable = existsInSequence({
       type: taskTypeFromTimelineType(TimelineTypes.GOOD_ACCOUNT),
@@ -105,10 +95,7 @@
   const selectEndStake = () => {
     showCheckout = true
     dropdownOpen = false
-    storage.update(($storage) => ({
-      ...$storage,
-      selected: TimelineTypes.END,
-    }))
+    timelineTypeQueryParam.set(TimelineTypes.END)
     buttonDisabled = !ownerCanEndFromSigner && !ownerIsPerpetual
     checkoutReversable = existsInSequence({
       type: taskTypeFromTimelineType(TimelineTypes.END),
@@ -120,11 +107,7 @@
   const selectRestartStake = () => {
     showCheckout = true
     dropdownOpen = false
-    timelineType = TimelineTypes.RESTART_STAKE
-    storage.update(($storage) => ({
-      ...$storage,
-      selected: timelineType,
-    }))
+    timelineTypeQueryParam.set(TimelineTypes.RESTART_STAKE)
   }
   const timelineTypesToTask = new Map<TimelineTypes, TaskType>([
     [TimelineTypes.DEPOSIT_HSI, TaskType.depositHsi],
@@ -144,27 +127,23 @@
   ])
   let filteredOptions: types.TimelineTypes[] = []
   $: {
-    filteredOptions = options.filter((option) => {
+    filteredOptions = $address ? options.filter((option) => {
       switch (option) {
         case types.TimelineTypes.DEPOSIT_HSI:
-          return ethers.utils.getAddress(stake.owner) === $address
+          return ethers.getAddress(stake.owner) === $address
         case types.TimelineTypes.WITHDRAW_HSI:
           return existingStakeManagerIsOwner
         case types.TimelineTypes.TOKENIZE_HSI:
-          return ethers.utils.getAddress(stake.owner) === $address
+          return ethers.getAddress(stake.owner) === $address
             && !stake.tokenized
         default:
           return true
       }
-    })
+    }) : []
   }
-  // $: timelineType = filteredOptions[0]
-  const storage = queryParameters({
-    selected: ssp.string(filteredOptions[0]),
-  })
-  $: timelineType = $storage.selected as types.TimelineTypes
+  $: timelineType = ($timelineTypeQueryParam || filteredOptions[0]) as types.TimelineTypes
   // run selected option for the first time
-  $: typeToSelect.get($storage.selected as types.TimelineTypes)?.()
+  $: typeToSelect.get(timelineType)?.()
   const checkoutDepositHsi = async () => {
     const all = contracts.all($chainId, null)
     const [tokenIds, settings, settingsEncoded] = await Promise.all([
@@ -173,13 +152,13 @@
       all.existingStakeManager.defaultEncodedSettings(),
     ])
     const hsiAddressToTokenId = await rpcQueries.getCustodianToTokenIds($chainId, tokenIds)
-    const tokenId = hsiAddressToTokenId.get(ethers.utils.getAddress(stake.custodian))
+    const tokenId = hsiAddressToTokenId.get(ethers.getAddress(stake.custodian))
     if (!tokenId) throw new Error('unable to find token id')
     addToSequence(TaskType.depositHsi, {
       tokenId,
       stake,
       settings,
-      settingsEncoded: settingsEncoded.toBigInt(),
+      settingsEncoded: settingsEncoded,
     }, {
       contract: types.ContractType.ExistingStakeManager,
     })
@@ -200,8 +179,13 @@
     })
   }
   const checkoutEndStake = async () => {
+    const contract = stake.isHedron || ownerIsPerpetual
+      ? types.ContractType.ExistingStakeManager
+      : types.ContractType.StakeManager
     addToSequence(TaskType.endStake, {
       stake,
+    }, {
+      contract,
     })
   }
   const checkout = () => {

@@ -1,13 +1,13 @@
 import { derived, get, readable, writable } from 'svelte/store'
 import { readable as readablePromise } from './promise-store'
 import * as ethers from 'ethers'
-import type { SwitchChainError } from 'viem'
+import type { SwitchChainError, TypedData, TypedDataDefinition, TypedDataDomain } from 'viem'
 import { mainnet, pulsechain, pulsechainV4, hardhat } from '@wagmi/chains'
 import type { Chain } from '@wagmi/core'
 import _ from 'lodash'
 import { goto } from '$app/navigation'
 import { page } from '$app/stores'
-import type { sequence } from '0xsequence'
+// import type { sequence } from '0xsequence'
 
 export const chains = new Map<number, Chain>([
   [1, mainnet],
@@ -31,11 +31,11 @@ export const replaceUrl = ($chainId: number, path: string) => {
   return url
 }
 let setProvider: () => void
-const underlyingProvider = readable<null | ethers.providers.ExternalProvider>(null, (set) => {
+const underlyingProvider = readable<null | ethers.Eip1193Provider>(null, (set) => {
   if (!get(windowIsAvailable)) {
     return () => {}
   }
-  let underlying!: ethers.providers.ExternalProvider
+  let underlying!: ethers.Eip1193Provider
   let rem!: () => void
   const providerNetworkSwitched = async (cId: string) => {
     const $chainId = parseInt(cId)
@@ -87,7 +87,7 @@ const underlyingProvider = readable<null | ethers.providers.ExternalProvider>(nu
   }
 })
 export const connectable = derived([underlyingProvider], ([$underlyingProvider]) => !!$underlyingProvider)
-const mmChainId = ($underlyingProvider: null | ethers.providers.ExternalProvider) => {
+const mmChainId = ($underlyingProvider: null | ethers.Eip1193Provider) => {
   return +($underlyingProvider as any)?.networkVersion
 }
 export const provider = derived(
@@ -95,13 +95,13 @@ export const provider = derived(
   [$underlyingProvider, $intendsToConnect, $chainId]
 ) => {
   if (!$underlyingProvider || !$chainId || !$intendsToConnect) return null
-  return new ethers.providers.Web3Provider($underlyingProvider)
+  return new ethers.BrowserProvider($underlyingProvider)
 })
 export const publicProvider = derived([chainId], ([$chainId]) => {
   if ($chainId) {
     const chain = chains.get($chainId)
     if (chain) {
-      return new ethers.providers.JsonRpcProvider(chain.rpcUrls.public.http[0], $chainId)
+      return new ethers.JsonRpcProvider(chain.rpcUrls.public.http[0], $chainId)
     }
   }
   return null
@@ -110,25 +110,25 @@ export const signer = derived([provider], ([$provider]) => {
   if (!$provider) return null
   return $provider.getSigner()
 })
-export const address = readablePromise<string>(ethers.constants.AddressZero, derived([provider, chainId], async ([$provider, $chainId]) => {
+export const address = readablePromise<string>(ethers.ZeroAddress, derived([provider, chainId], async ([$provider, $chainId]) => {
   if (!$provider || !$chainId) {
-    return ethers.constants.AddressZero
+    return ethers.ZeroAddress
   }
   const accounts = await $provider.send("eth_requestAccounts", [])
   const account = accounts.length && accounts[0]
-  return _.isString(account) ? ethers.utils.getAddress(account) : ethers.constants.AddressZero
+  return _.isString(account) ? ethers.getAddress(account) : ethers.ZeroAddress
 }))
 export const connected = derived(
   [intendsToConnect, chainId, address],
   ([$intendsToConnect, $chainId, $address]) => {
     // console.log($intendsToConnect, $chainId, $address)
-    return $intendsToConnect && $chainId as number > 0 && $address !== ethers.constants.AddressZero
+    return $intendsToConnect && $chainId as number > 0 && $address !== ethers.ZeroAddress
   },
 )
 
-export const currentBlock = readable<null | ethers.providers.Block>(null, (set) => {
+export const currentBlock = readable<null | ethers.Block>(null, (set) => {
   let id: any
-  const retrieve = async ($prov: null | ethers.providers.JsonRpcProvider) => {
+  const retrieve = async ($prov: null | ethers.JsonRpcProvider) => {
     if (!$prov) return
     const loop = async () => {
       const block = await $prov.getBlock('latest').catch(() => null)
@@ -213,10 +213,10 @@ const defaultDelimiter = ','
 
 export const numberWithCommas = (x: string, delimiter = defaultDelimiter) => x.replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/ugim, delimiter)
 
-export const sign712Message = async (typedRequest: sequence.utils.TypedData) => {
-  const $signer = get(signer)
+export const sign712Message = async (typedRequest: any) => {
+  const $signer = await get(signer)
   if (!$signer) return
-  return $signer._signTypedData(typedRequest.domain, typedRequest.types, typedRequest.message)
+  return $signer.signTypedData(typedRequest.domain, typedRequest.types, typedRequest.message)
 }
 
 // export const create712Message = {
@@ -237,7 +237,7 @@ export const sign712Message = async (typedRequest: sequence.utils.TypedData) => 
 //       name: 'HexPay.Day',
 //       version: '1',
 //       chainId,
-//       verifyingContract: ethers.constants.AddressZero,
+//       verifyingContract: ethers.ZeroAddress,
 //     },
 //     message: {
 //       // the owner of this stake id must be the address
@@ -250,11 +250,7 @@ export const sign712Message = async (typedRequest: sequence.utils.TypedData) => 
 export const structOutputToObject = (struct: object) => {
   return _(struct).entries().reduce((obj, [key, entry]) => {
     if (_.isNaN(+key)) {
-      let value = _.isArrayLike(entry) ? structOutputToObject(entry) : entry
-      if (value._isBigNumber) {
-        value = value.toBigInt()
-      }
-      obj[key] = value
+      obj[key] = _.isArrayLike(entry) ? structOutputToObject(entry) : entry
     }
     return obj
   }, {} as Record<string, any>)

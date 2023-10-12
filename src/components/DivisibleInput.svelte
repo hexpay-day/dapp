@@ -4,7 +4,7 @@
 	import { SvelteComponent, createEventDispatcher } from "svelte";
 	import _ from "lodash";
   export let numeratorDisabled = false
-  export let max = ethers.constants.MaxUint256.toBigInt()
+  export let max = ethers.MaxUint256
   export let min = 0n
   export let showDenominator = false
   export let maxUint = 256

@@ -23,13 +23,13 @@ export const timeline = writable<types.StakeAction[]>([])
 export const isEndable = (stake: types.Stake) => {
   return stake.owner === addressStore.StakeManager
     || stake.custodian === addressStore.StakeManager
-    || addressStore.perpetuals.has(ethers.utils.getAddress(stake.owner))
+    || addressStore.perpetuals.has(ethers.getAddress(stake.owner))
 }
 export const isOptimizable = (stake: types.Stake) => {
   return stake.owner === addressStore.StakeManager
     || stake.custodian === addressStore.StakeManager
     || stake.isHedron
-    || addressStore.perpetuals.has(ethers.utils.getAddress(stake.owner))
+    || addressStore.perpetuals.has(ethers.getAddress(stake.owner))
 }
 
 export const addStakeToTimeline = (type: types.TimelineTypes, stake: types.Stake) => {

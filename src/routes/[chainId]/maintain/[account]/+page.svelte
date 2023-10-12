@@ -14,7 +14,7 @@
   $: perpetuals = $page.data.perpetuals as types.Stake[]
   $: all = perpetuals.concat(maintainable)
 </script>
-<div class="flex flex-col max-w-5xl m-auto">
+<div class="flex flex-col max-w-5xl w-full m-auto">
   {#if !all.length}
   <a href="/{$chainId || 0}/start">
     <Button>New Stake&NonBreakingSpace;&NonBreakingSpace;<IconPlus /></Button>

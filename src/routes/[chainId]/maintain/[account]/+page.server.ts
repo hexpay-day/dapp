@@ -6,11 +6,10 @@ import * as addresses from '../../../../stores/addresses'
 
 import type * as types from '../../../../types'
 import * as queries from '../../../../stores/queries'
-import { sequence } from '0xsequence';
 import { getByChainId } from '../../../../stores/providers';
 import { db } from '../../../../db';
 import { tableNames } from '../../../../db/utils';
-import { ethers } from 'ethers';
+import { ethers, verifyTypedData } from 'ethers';
 import { args } from '../../../../config';
 import * as rpcQueries from '../../../../stores/rpc-queries'
 
@@ -20,7 +19,7 @@ export const load = async ({ params }: { params: { chainId: string; account: str
   // because for a week, they will not have active stakes
   const [perpetuals, maintainable] = await Promise.all([
     queries.cacheByAddress.fetch(`${chainId}-perpetuals`).catch(() => [] as types.Stake[]),
-    queries.cacheByAddress.fetch(`${chainId}-${ethers.utils.getAddress(params.account)}`).catch(() => [] as types.Stake[]),
+    queries.cacheByAddress.fetch(`${chainId}-${ethers.getAddress(params.account)}`).catch(() => [] as types.Stake[]),
   ])
   return {
     chainId,
@@ -35,7 +34,7 @@ export const actions: Actions = {
     const data = await reader?.read()
     const request = JSON.parse(data?.value?.toString() as string) as backendClient.StoreSignaturePayload
     const chainId = +(a.params.chainId as string)
-    const account = ethers.utils.getAddress(a.params.account as string)
+    const account = ethers.getAddress(a.params.account as string)
     const typedRequest = backendClient.create712Message.requestGoodAccount({
       chainId,
       stakeId: request.stakeId,
@@ -43,24 +42,23 @@ export const actions: Actions = {
       validStart: request.validStart,
       validUntil: request.validUntil,
     })
-    const provider = getByChainId(chainId)
-    const result = await sequence.utils.isValidTypedDataSignature(account, typedRequest, request.signature, provider)
+    const result = await verifyTypedData(typedRequest.domain, typedRequest.types, typedRequest.message, request.signature)
     if (!result) {
       return { success: false, message: 'invalid signature' }
     }
     // check that address owns stake
     const stakes = await rpcQueries.loadStakeLists(chainId, request.custodian)
-    const stake = _.find(stakes, ({ stakeId }) => stakeId === request.stakeId)
-    if (!stake || stake.stakeId !== request.stakeId) {
+    const stake = _.find(stakes, ({ stakeId }) => stakeId === BigInt(request.stakeId))
+    if (!stake || stake.stakeId !== BigInt(request.stakeId)) {
       return { success: false, message: 'stake does not exist', data: stake }
     }
-    if (ethers.utils.getAddress(request.custodian) !== account) {
+    if (ethers.getAddress(request.custodian) !== account) {
       // check that the account owns the stake
       const [hsiInfoOwner, hsiInfoExisting] = await Promise.all([
         rpcQueries.loadHsiFrom(chainId, account),
         rpcQueries.loadHsiFrom(chainId, addresses.ExistingStakeManager),
       ])
-      const search = [request.custodian, ethers.utils.getAddress(request.custodian)]
+      const search = [request.custodian, ethers.getAddress(request.custodian)]
       if (_.intersection(hsiInfoOwner.all, search).length) {
         // hsi owned by owner
       } else if (_.intersection(hsiInfoExisting.all, search).length) {

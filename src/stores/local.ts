@@ -45,7 +45,7 @@ export const writable = <T>(key: string, baseValue: T) => {
 }
 
 const key = derived([chainId, address], ([$chainId, $address]) => {
-  if ($chainId === 0 || $address === ethers.constants.AddressZero) return 'local'
+  if ($chainId === 0 || $address === ethers.ZeroAddress) return 'local'
   return `${$chainId}/${$address}`
 })
 

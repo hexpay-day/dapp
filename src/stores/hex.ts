@@ -29,18 +29,18 @@ export const hexData = readable<HexData>({
     const $publicProvider = get(publicProvider)
     if (!$publicProvider) return
     if (!$chainId) return
-    if (!ethers.utils.isAddress($address)) return
-    if (ethers.constants.AddressZero === $address) return
+    if (!ethers.isAddress($address)) return
+    if (ethers.ZeroAddress === $address) return
     const c = contracts.all($chainId, $publicProvider)
     const [allowance, bal, dep, iso] = await Promise.all([
-      c.hex.allowance($address, c.stakeManager.address)
-        .then((res) => res.toBigInt() || 0n),
+      c.hex.allowance($address, await c.stakeManager.getAddress())
+        .then((res) => res || 0n),
       c.hex.balanceOf($address)
-        .then((res) => res.toBigInt() || 0n),
-      c.stakeManager.withdrawableBalanceOf(c.hex.address, $address)
-        .then((res) => res.toBigInt() || 0n),
+        .then((res) => res || 0n),
+      c.stakeManager.withdrawableBalanceOf(await c.hex.getAddress(), $address)
+        .then((res) => res || 0n),
       // isolated not yet available
-      ethers.BigNumber.from(0).toBigInt(),
+      0n,
     ])
     const result = {
       allowance,
@@ -69,21 +69,21 @@ export const hexData = readable<HexData>({
 
 export const fetchData = async ($chainId: number, address: string) => {
   if (!$chainId) return
-  if (!ethers.utils.isAddress(address)) {
+  if (!ethers.isAddress(address)) {
     return
   }
-  if (ethers.constants.AddressZero === address) {
+  if (ethers.ZeroAddress === address) {
     return
   }
-  const $signer = get(signer)
+  const $signer = await get(signer)
   if (!$signer) return
   const c = contracts.all($chainId, $signer)
   const [bal, dep, iso] = await Promise.all([
     c.hex.balanceOf(address),
-    ethers.BigNumber.from(0),
-    ethers.BigNumber.from(0),
+    0n,
+    0n,
   ])
-  balance.set(bal.toBigInt() || (1_000n * (10n**8n)))
-  deposited.set(dep.toBigInt())
-  isolated.set(iso.toBigInt())
+  balance.set(bal || (1_000n * (10n**8n)))
+  deposited.set(dep)
+  isolated.set(iso)
 }
