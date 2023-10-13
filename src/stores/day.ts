@@ -15,6 +15,7 @@ export const dayToIso = (day = 0n) => {
 
 export const getCurrentDay = async () => {
   const s = await get(signer)
+  if (!s) return 0
   const mainnet = contracts.all(get(chainId), s)
   const hexCurrentDay = await mainnet.hex.currentDay()
   currentDay.update(() => Number(hexCurrentDay))

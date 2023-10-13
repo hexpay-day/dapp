@@ -4,6 +4,7 @@ const urls = new Map<number, string>([
   [1, 'https://eth.llamarpc.com	'],
   [369, 'https://rpc.pulsechain.com'],
   [943, 'https://rpc.v4.testnet.pulsechain.com'],
+  [31_337, 'http://localhost:8545'],
 ])
 
 export const getByChainId = (chainId: number) => {
