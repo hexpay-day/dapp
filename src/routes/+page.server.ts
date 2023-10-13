@@ -23,6 +23,9 @@ export const actions = {
     } = request
     if (!chainId || !hash || !account) return { success: false, message: 'invalid data' }
     const provider = getByChainId(chainId)
+    if (!provider) return {
+      success: false
+    }
     const receipt = await provider.getTransactionReceipt(hash)
     if (!receipt || ethers.getAddress(receipt.from) !== account) return { success: false, message: 'data is not yet available' }
     const all = contracts.all(chainId, null)

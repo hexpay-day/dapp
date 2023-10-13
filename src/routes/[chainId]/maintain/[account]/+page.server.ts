@@ -6,7 +6,6 @@ import * as addresses from '../../../../stores/addresses'
 
 import type * as types from '../../../../types'
 import * as queries from '../../../../stores/queries'
-import { getByChainId } from '../../../../stores/providers';
 import { db } from '../../../../db';
 import { tableNames } from '../../../../db/utils';
 import { ethers, verifyTypedData } from 'ethers';

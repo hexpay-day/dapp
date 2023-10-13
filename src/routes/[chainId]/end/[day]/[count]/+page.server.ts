@@ -8,8 +8,16 @@ import { db } from '../../../../../db'
 import { tableNames } from '../../../../../db/utils'
 import { args } from '../../../../../config'
 import { getByChainId } from '../../../../../stores/providers'
+import type { JsonRpcProvider } from 'ethers'
 
 export const ssr = false
+
+const defaultResponse = ({chainId,dayParam,count}: {chainId: number, dayParam: number, count: number}) => ({
+  chainId,
+  stakes: [],
+  day: dayParam,
+  count,
+})
 
 export const load = async ({ params }: types.StakesLoadParams): Promise<types.StakesDayResponse> => {
   const chainId = +params.chainId
@@ -19,11 +27,16 @@ export const load = async ({ params }: types.StakesLoadParams): Promise<types.St
   let tmpChainId!: number
   if (!web3Store.chains.has(chainId) || chainId === 31_337) {
     let provider = getByChainId(chainId)
+    if (!provider) return defaultResponse({
+      chainId,
+      dayParam,
+      count,
+    })
     const latest = await provider.getBlock('latest')
     const lastUnknown = latest?.number as number - 100_000
     const lastSolidBlock = await provider.getBlock(lastUnknown)
     for (const [chainId] of [...web3Store.chains.entries()]) {
-      provider = getByChainId(chainId)
+      provider = getByChainId(chainId) as JsonRpcProvider
       const block = await provider.getBlock(lastSolidBlock?.parentHash as string)
       if (block) {
         tmpChainId = chainId
@@ -31,12 +44,11 @@ export const load = async ({ params }: types.StakesLoadParams): Promise<types.St
       }
     }
     if (!tmpChainId) {
-      return {
+      return defaultResponse({
         chainId,
-        stakes: [],
-        day: dayParam,
+        dayParam,
         count,
-      }
+      })
     }
   } else {
     tmpChainId = chainId

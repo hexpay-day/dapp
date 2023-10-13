@@ -8,6 +8,6 @@ const urls = new Map<number, string>([
 
 export const getByChainId = (chainId: number) => {
   const url = urls.get(chainId)
-  if (!url) throw new Error('unable to connect')
+  if (!url) return null
   return new ethers.JsonRpcProvider(url, chainId)
 }
