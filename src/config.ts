@@ -20,16 +20,4 @@ export const args = yargs().options({
     require: true,
     default: false,
   },
-  rpc1: {
-    type: 'string',
-    require: true,
-  },
-  rpc369: {
-    type: 'string',
-    require: true,
-  },
-  rpc943: {
-    type: 'string',
-    require: true,
-  },
 }).env().parseSync()

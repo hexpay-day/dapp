@@ -1,13 +1,12 @@
 import { derived, get, readable, writable } from 'svelte/store'
 import { readable as readablePromise } from './promise-store'
 import * as ethers from 'ethers'
-import type { SwitchChainError, TypedData, TypedDataDefinition, TypedDataDomain } from 'viem'
+import type { SwitchChainError } from 'viem'
 import { mainnet, pulsechain, pulsechainV4, hardhat } from '@wagmi/chains'
 import type { Chain } from '@wagmi/core'
 import _ from 'lodash'
 import { goto } from '$app/navigation'
 import { page } from '$app/stores'
-// import type { sequence } from '0xsequence'
 
 export const chains = new Map<number, Chain>([
   [1, mainnet],
