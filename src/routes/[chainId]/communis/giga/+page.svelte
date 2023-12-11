@@ -12,7 +12,7 @@
   import * as linkStore from '../../../../stores/links'
 	import { loading } from '../../../../stores/loading';
   const { bridge } = linkStore
-  const { chainId, signer } = web3Store
+  const { chainId, signer, numberWithCommas } = web3Store
   const { allowance, balanceCOMM, balanceGCOMM } = communisStore
   const uint256 = (2n**256n)-1n
   const factor = 10n**9n
@@ -33,6 +33,7 @@
       await tx.wait()
     } finally{
       loading.decrement()
+      resetToChainData()
     }
   }
   let approval = writable(0n)
@@ -57,17 +58,22 @@
       await tx.wait()
     } finally {
       loading.decrement()
+      resetToChainData()
     }
+  }
+  const resetToChainData = () => {
+    // approval.set($allowance)
   }
   const runBurn = async () => {
     const signer = await get(web3Store.signer)
     const all = contracts.all($chainId, signer)
     loading.increment()
     try {
-      const tx = await all.gcomm.burn($mint, options)
+      const tx = await all.gcomm.burn($burn, options)
       await tx.wait()
     } finally {
       loading.decrement()
+      resetToChainData()
     }
   }
   const copyGCommAddress = async () => {
@@ -85,6 +91,15 @@
     if (!$bridge) return
     open($bridge, '_blank')
   }
+  $: allowanceCOMMValue = ethers.formatUnits($allowance, decimals)
+  $: mintCOMMValue = numberWithCommas(ethers.formatUnits($mint * factor, decimals))
+  $: mintGCOMMValue = numberWithCommas(ethers.formatUnits($mint, decimals))
+  $: burnGCOMMValue = numberWithCommas(ethers.formatUnits($burn, decimals))
+  $: burnCOMMValue = numberWithCommas(ethers.formatUnits($burn * factor, decimals))
+  $: approvalDecimal = ethers.formatUnits($approval, decimals)
+  $: approvalWithCommas = $approval === uint256 ? approvalDecimal : numberWithCommas(approvalDecimal)
+  $: mintWithCommas = numberWithCommas(ethers.formatUnits($mint, decimals))
+  $: burnWithCommas = numberWithCommas(ethers.formatUnits($burn, decimals))
 </script>
 
 <div class="container m-auto flex justify-between max-w-3xl flex-col gap-2">
@@ -95,7 +110,7 @@
         max={uint256}
         placeholder="0.0"
         on:update={(e) => { approval.set(e.detail.value) }}
-        text={ethers.formatUnits($approval, decimals)} />
+        text={approvalWithCommas} />
       <Button
         class="px-3"
         color="alternative"
@@ -109,14 +124,14 @@
     </ButtonGroup>
     <div class="flex my-2 items-center">
       <IconChevronLeft class="min-w-fit inline-block" />
-      <span title={ethers.formatUnits($allowance, decimals)} class="inline-block text-sm">{ethers.formatUnits($allowance, decimals)} $gCOMM</span>
+      <span title={allowanceCOMMValue} class="inline-block text-sm">{allowanceCOMMValue} $gCOMM</span>
     </div>
   </div>
   <div class="flex flex-col w-full">
     <ButtonGroup class="grow">
       <DecimalInput
         {decimals}
-        text={ethers.formatUnits($mint, decimals)}
+        text={mintWithCommas}
         max={$balanceCOMM / factor}
         on:update={(e) => { mint.set(e.detail.value) }} />
       <Button
@@ -130,16 +145,16 @@
         on:click={runMint}>Mint</Button>
     </ButtonGroup>
     <div class="flex my-2 items-center">
-      <span class="text-sm">{ethers.formatUnits($mint * factor, decimals)} $COMM</span>
+      <span class="text-sm">{mintCOMMValue} $COMM</span>
       <IconChevronRight />
-      <span title={ethers.formatUnits($mint, decimals)} class="inline-block text-sm overflow-hidden whitespace-nowrap text-ellipsis">{ethers.formatUnits($mint, decimals)} $gCOMM</span>
+      <span title={mintGCOMMValue} class="inline-block text-sm overflow-hidden whitespace-nowrap text-ellipsis">{mintGCOMMValue} $gCOMM</span>
     </div>
   </div>
   <div class="flex flex-col w-full">
     <ButtonGroup class="grow">
       <DecimalInput
         {decimals}
-        text={ethers.formatUnits($burn, 12)}
+        text={burnWithCommas}
         max={$balanceGCOMM}
         on:update={(e) => { burn.set(e.detail.value) }} />
       <Button
@@ -154,9 +169,9 @@
         on:click={runBurn}>Burn</Button>
     </ButtonGroup>
     <div class="flex my-2 items-center">
-      <span class="text-sm">{ethers.formatUnits($burn, decimals)} $gCOMM</span>
+      <span class="text-sm">{burnGCOMMValue} $gCOMM</span>
       <IconChevronRight />
-      <span title={ethers.formatUnits($burn * factor, decimals)} class="inline-block text-sm overflow-hidden whitespace-nowrap text-ellipsis">{ethers.formatUnits($burn * factor, decimals)}&nbsp;$COMM</span>
+      <span title={burnCOMMValue} class="inline-block text-sm overflow-hidden whitespace-nowrap text-ellipsis">{burnCOMMValue}&nbsp;$COMM</span>
     </div>
   </div>
   <div class="flex flex-row w-full items-baseline">
