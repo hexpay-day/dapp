@@ -11,8 +11,8 @@
   const { chainId, signer, address } = web3Store
   let sending = false
   export let stake!: types.Stake
-  $: s = $signer as ethers.JsonRpcSigner
   const tokenizeHsi = async () => {
+    const s = await $signer as ethers.JsonRpcSigner
     sending = true
     try {
       const all = contracts.all($chainId, s)

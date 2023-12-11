@@ -1,3 +1,3 @@
-import { writable } from "svelte/store"
+// import { writable } from "svelte/store"
 
-export const chainId = writable(1)
+// export const chainId = writable(1)

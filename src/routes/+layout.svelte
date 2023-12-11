@@ -5,7 +5,7 @@
   import { page } from '$app/stores';
   import Settings from '../components/Settings.svelte'
   import Footer from '../components/Footer.svelte'
-	import NavigatingIndicator from "../components/NavigatingIndicator.svelte";
+	import LoadingIndicator from "../components/LoadingIndicator.svelte";
   import NetworkChooser from '../components/NetworkChooser.svelte'
   import { Banner } from 'flowbite-svelte';
 	import { IconTool } from "@tabler/icons-svelte";
@@ -20,10 +20,10 @@
     <div class="flex items-center">
       <Settings />
       <div class="mx-2">
-        <NavigatingIndicator />
+        Day {$currentDay}
       </div>
       <div class="mx-2">
-        Day {$currentDay}
+        <LoadingIndicator />
       </div>
     </div>
     <div class="gap-2 my-1 flex">

@@ -8,7 +8,7 @@
 	import { ethers } from "ethers"
 	import ConnectWallet from "./ConnectWallet.svelte"
 	import _ from "lodash"
-	import type { IMulticall3 } from "@hexpayday/stake-manager/artifacts/types";
+	import type { Multicall } from "@hexpayday/stake-manager/artifacts/types";
 	import { onMount } from "svelte";
 	import { addToSequence } from "../stores/sequence";
   const { chainId, signer, address, connected, numberWithCommas } = web3Store
@@ -41,7 +41,7 @@
       showSpinner = false
     }
   }
-  const parseResults = async ([isApprovedForAll, getApproved]: IMulticall3.ResultStructOutput[]) => {
+  const parseResults = async ([isApprovedForAll, getApproved]: Multicall.ResultStructOutput[]) => {
     const { hsim } = await all
     return [
       hsim.interface.decodeFunctionResult('isApprovedForAll', isApprovedForAll.returnData)[0],

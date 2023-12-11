@@ -4,7 +4,7 @@ import _ from 'lodash'
 import type * as aTypes from '@hexpayday/stake-manager/artifacts/types/contracts/interfaces/HEX'
 import * as contracts from './contracts'
 import * as addresses from './addresses'
-import type { IMulticall3 } from '@hexpayday/stake-manager/artifacts/types'
+import type { Multicall } from '@hexpayday/stake-manager/artifacts/types'
 
 export const toStake = (
   all: types.StakesEndingOnDay[],
@@ -125,14 +125,14 @@ export const loadHsiFrom = async (chainId: number, account: string) => {
   const allCalls = detokenizedCalls.concat(tokenizedCalls)
   const allResults = await all.multicall.aggregate3.staticCall(allCalls)
   // for whatever reason, index is not given during partition
-  const detokenizedStakes = allResults.slice(0, detokenizedCalls.length) as IMulticall3.ResultStructOutput[]
-  const tokenizedStakes = allResults.slice(detokenizedCalls.length) as IMulticall3.ResultStructOutput[]
+  const detokenizedStakes = allResults.slice(0, detokenizedCalls.length) as Multicall.ResultStructOutput[]
+  const tokenizedStakes = allResults.slice(detokenizedCalls.length) as Multicall.ResultStructOutput[]
   const detokenizedAddresses = detokenizedStakes.map((result) => ethers.getAddress(`0x${result.returnData.slice(-40)}`))
   const tokenIds = tokenizedStakes.map((result) => BigInt(result.returnData))
   const tokenHsiCalls = tokenIds.map((tokenId) => (
     callHsim(all.hsim.interface.encodeFunctionData('hsiToken', [tokenId]))
   ))
-  const tokenHsiResults = tokenHsiCalls ? await all.multicall.aggregate3.staticCall(tokenHsiCalls) : [] as IMulticall3.ResultStructOutput[]
+  const tokenHsiResults = tokenHsiCalls ? await all.multicall.aggregate3.staticCall(tokenHsiCalls) : [] as Multicall.ResultStructOutput[]
   const tokenizedHsi = tokenHsiResults.map((result) => ethers.getAddress(`0x${result.returnData.slice(-40)}`))
   const allHsi = detokenizedAddresses.concat(tokenizedHsi)
   const stakeListCalls = allHsi.map((hsi) => callHex(

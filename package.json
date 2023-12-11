@@ -63,7 +63,8 @@
 		"vitest": "^0.25.3"
 	},
 	"dependencies": {
-		"@hexpayday/stake-manager": "^1.0.20",
+		"@hexpayday/gigacommunis": "^0.0.2",
+		"@hexpayday/stake-manager": "^2.0.0",
 		"@popperjs/core": "^2.11.8",
 		"@sveltejs/adapter-node": "^1.0.0-next.106",
 		"@tabler/icons-svelte": "2.31",

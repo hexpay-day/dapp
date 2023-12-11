@@ -25,12 +25,12 @@
 	import * as stakeStartStore from "../../../stores/stake-start";
 	import * as settingStore from "../../../stores/settings";
   import { encodableSettingsFromInputs } from '../../../stores/stakes'
-	import type { EncodableSettings } from "@hexpayday/stake-manager/artifacts/types";
 	import { addToSequence } from "../../../stores/sequence";
   import { FundingOrigin, TaskType } from '../../../types'
 	import CheckoutButton from "../../../components/CheckoutButton.svelte";
 	import ConsentToggles from "../../../components/settings/ConsentToggles.svelte";
 	import CopyIterations from "../../../components/settings/CopyIterations.svelte";
+  import type * as smUtils from '@hexpayday/stake-manager/src/utils'
   const {
     useISO,
     timezoneLabel,
@@ -59,6 +59,7 @@
     othersCanEnd,
     canMintHedronAtAnyTime,
     shouldMintHedronAtEnd,
+    shouldMintCommunisAtEnd,
     contractCustodyTokens,
     allowStakeToBeTransfered,
     newStakeDaysSelection,
@@ -74,7 +75,7 @@
   } = settingStore
   $: fetchData($chainId, $address)
   $: dateInputBoundValue = $dateInputValue
-  let encodableSettings!: EncodableSettings.SettingsStruct
+  let encodableSettings!: ReturnType<typeof smUtils.settings.decode>
   let useHexPayDayContract = true
   $: encodableSettings = encodableSettingsFromInputs({
     targetTip: $hexTipSelection,
@@ -91,7 +92,7 @@
       shouldSendTokensToStaker: !$contractCustodyTokens,
       stakeIsTransferable: $allowStakeToBeTransfered,
       copyExternalTips: false,
-      hasExternalTips: false,
+      mintCommunisAtEnd: $shouldMintCommunisAtEnd,
     },
   })
   $: settings = {

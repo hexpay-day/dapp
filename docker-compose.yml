@@ -1,0 +1,23 @@
+version: "3.7"
+
+networks:
+  hexpayday:
+    driver: bridge
+
+services:
+  hexpayday-postgres-rw:
+    container_name: hexpayday-postgres-rw
+    image: postgres:13
+    shm_size: 16g
+    command: postgres -c 'max_connections=500' -c work_mem=256MB -c maintenance_work_mem=256MB -c max_wal_size=1GB
+    cpus: 8
+    networks:
+      - hexpayday
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=hexpayday
+      - POSTGRES_USER=hexpayday
+      - POSTGRES_PASSWORD=password
+    ports:
+      - 5138:5432

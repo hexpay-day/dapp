@@ -15,18 +15,17 @@ export const dayToIso = (day = 0n) => {
 
 export const getCurrentDay = async () => {
   const s = await get(signer)
-  if (!s) return 0
   const mainnet = contracts.all(get(chainId), s)
-  const hexCurrentDay = await mainnet.hex.currentDay()
+  const hexCurrentDay = await mainnet.hex.currentDay.staticCall()
   currentDay.update(() => Number(hexCurrentDay))
   return Number(hexCurrentDay)
 }
 
-setInterval(() => {
-  // we can use a request animation frame to bolster this
-  // but going directly to the chain is useful for development purposes
-  getCurrentDay()
-}, 10_000)
+// setInterval(() => {
+//   // we can use a request animation frame to bolster this
+//   // but going directly to the chain is useful for development purposes
+//   getCurrentDay()
+// }, 10_000)
 
 export const useISO = writable<boolean>(false)
 export const timezoneLabel = derived([useISO], ([$useISO]) => (

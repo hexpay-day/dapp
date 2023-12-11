@@ -35,7 +35,7 @@
   onDestroy(unsubscribe)
   export let text = defaultText
   const infinityCharacter = '∞'
-  const validAmount = (amountWithCommas: string) => {
+  const validAmount = (amountWithCommas: string): boolean | null => {
     const amount = amountWithCommas.split(',').join('')
     let amnt = amount.trim().split(infinityCharacter).join('')
     if (amnt !== amount) {

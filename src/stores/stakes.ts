@@ -1,6 +1,6 @@
 import { writable } from "svelte/store";
 import type * as types from '../types'
-import type { EncodableSettings } from "@hexpayday/stake-manager/artifacts/types";
+import type * as smUtils from "@hexpayday/stake-manager/src/utils";
 
 export const stakes = writable<types.Stake[]>([])
 
@@ -50,7 +50,7 @@ type InputsToEncodedSettings = {
   newStakeDaysMethod: bigint;
   newStakeDaysMagnitude: bigint;
   copyIterations: number;
-  consentAbilities: EncodableSettings.ConsentAbilitiesStruct;
+  consentAbilities: ReturnType<typeof smUtils.consentAbilities.decode>
 }
 
 export const encodableSettingsFromInputs = ({
@@ -61,7 +61,7 @@ export const encodableSettingsFromInputs = ({
   newStakeDaysMagnitude,
   copyIterations,
   consentAbilities,
-}: InputsToEncodedSettings): EncodableSettings.SettingsStruct => ({
+}: InputsToEncodedSettings): ReturnType<typeof smUtils.settings.decode> => ({
   targetTip: linear(targetTip),
   hedronTip: linear(hedronTip),
   newStake: linear(newStake),
@@ -76,6 +76,7 @@ export const encodableSettingsFromInputs = ({
           : newStakeDaysMagnitude
       )
     ),
-  copyIterations,
+  copyIterations: BigInt(copyIterations),
+  hasExternalTips: false, // controlled by contract
   consentAbilities,
 })

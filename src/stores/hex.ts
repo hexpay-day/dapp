@@ -38,7 +38,8 @@ export const hexData = readable<HexData>({
       c.hex.balanceOf($address)
         .then((res) => res || 0n),
       c.stakeManager.withdrawableBalanceOf(await c.hex.getAddress(), $address)
-        .then((res) => res || 0n),
+        .then((res) => res || 0n)
+        .catch(() => 0n),
       // isolated not yet available
       0n,
     ])

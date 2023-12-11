@@ -1,9 +1,9 @@
-import type { EncodableSettings } from "@hexpayday/stake-manager/artifacts/types"
 import _ from "lodash"
 import { derived, get, writable } from "svelte/store"
 import type { Tip, MagnitudeSelection, DropdownOption } from "../types";
 import dayjs from "dayjs"
 import { ethers } from "ethers"
+import type * as smUtils from '@hexpayday/stake-manager/src/utils'
 import { DAY, startDateISO, minDateISO, timezoneOffset, useISO } from "./day"
 
 export const emptySettings = () => ({
@@ -45,13 +45,14 @@ export const emptySettings = () => ({
     shouldSendTokensToStaker: false,
     stakeIsTransferable: false,
     copyExternalTips: false,
-    hasExternalTips: false,
+    mintCommunisAtEnd: false,
   },
+  hasExternalTips: false,
 })
 
 export const amount = writable<string>('')
 
-export const setting = writable<EncodableSettings.SettingsStruct>(emptySettings())
+export const setting = writable<ReturnType<typeof smUtils.settings.decode>>(emptySettings())
 
 export const endDateLocal = writable(get(minDateISO))
 minDateISO.subscribe(($minDateISO) => {
@@ -106,6 +107,7 @@ export const disableRepeatStakeAmountDropdownDuring = derived([
 export const othersCanEnd = writable(true)
 export const canMintHedronAtAnyTime = writable(true)
 export const shouldMintHedronAtEnd = writable(true)
+export const shouldMintCommunisAtEnd = writable(true)
 export const contractCustodyTokens = writable(true)
 export const allowStakeToBeTransfered = writable(false)
 export const fundOther = writable(false)

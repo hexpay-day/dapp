@@ -4,6 +4,7 @@
     othersCanEnd,
     canMintHedronAtAnyTime,
     shouldMintHedronAtEnd,
+    shouldMintCommunisAtEnd,
     contractCustodyTokens,
     allowStakeToBeTransfered,
     fundFromWallet,
@@ -24,6 +25,10 @@
   <Label class="p-2">
     <Toggle bind:checked={$shouldMintHedronAtEnd}>Should Mint Hedron at End</Toggle>
     <Helper class="pl-14">Mint $HDRN for owner of stake when stake is being ended.</Helper>
+  </Label>
+  <Label class="p-2">
+    <Toggle bind:checked={$shouldMintCommunisAtEnd}>Should Mint Communis at End</Toggle>
+    <Helper class="pl-14">Mint $COMM for owner of stake when stake is being ended.</Helper>
   </Label>
   <Label class="p-2">
     <Toggle bind:checked={$contractCustodyTokens}>Custody Tokens</Toggle>

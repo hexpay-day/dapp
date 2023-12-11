@@ -1,6 +1,8 @@
 import * as graphqlRequest from 'graphql-request'
 import * as _queries from './queries'
 
+Error.stackTraceLimit = Infinity
+
 const hexUrls = new Map<number, string>([
   [1, 'https://graph.ethereum.pulsechain.com/subgraphs/name/Codeakk/Hex'],
   [369, 'https://graph.pulsechain.com/subgraphs/name/Codeakk/Hex'],

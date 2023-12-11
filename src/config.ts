@@ -20,4 +20,9 @@ export const args = yargs().options({
     require: true,
     default: false,
   },
+  includeHardhat: {
+    type: 'boolean',
+    require: false,
+    default: false,
+  },
 }).env().parseSync()

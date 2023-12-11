@@ -80,14 +80,21 @@ const underlyingProvider = readable<null | ethers.Eip1193Provider>(null, (set) =
       clearInterval(id)
     }
   }, 1_000)
-  intendsToConnect.subscribe(setProvider)
+  const intendsToConnectUnsub = intendsToConnect.subscribe(setProvider)
   return () => {
     clearInterval(id)
+    intendsToConnectUnsub()
   }
 })
 export const connectable = derived([underlyingProvider], ([$underlyingProvider]) => !!$underlyingProvider)
-const mmChainId = ($underlyingProvider: null | ethers.Eip1193Provider) => {
-  return +($underlyingProvider as any)?.networkVersion
+const mmChainId = async ($underlyingProvider: null | ethers.Eip1193Provider) => {
+  const provider = ($underlyingProvider as any)
+  if (provider) {
+    const network = await provider.request({
+      method: 'net_version',
+    })
+    return parseInt(network.result) || provider.networkVersion
+  }
 }
 export const provider = derived(
   [underlyingProvider, intendsToConnect, chainId], (
@@ -127,11 +134,15 @@ export const connected = derived(
 
 export const currentBlock = readable<null | ethers.Block>(null, (set) => {
   let id: any
+  let current!: ethers.Block
   const retrieve = async ($prov: null | ethers.JsonRpcProvider) => {
     if (!$prov) return
     const loop = async () => {
       const block = await $prov.getBlock('latest').catch(() => null)
-      if (block) set(block)
+      if (block && current?.hash !== block.hash) {
+        current = block
+        set(block)
+      }
       id = setTimeout(loop, 5_000)
     }
     loop()
@@ -198,7 +209,7 @@ export const changeNetworks = async (requestedChainId: number) => {
 export const facilitateConnect = async (requestedChainId: number) => {
   intendsToConnect.set(true)
   const $chainId = get(chainId)
-  if ($chainId !== requestedChainId || requestedChainId !== mmChainId(get(underlyingProvider))) {
+  if ($chainId !== requestedChainId || requestedChainId !== await mmChainId(get(underlyingProvider))) {
     await changeNetworks(requestedChainId).catch(() => {})
   }
 }

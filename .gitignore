@@ -11,5 +11,3 @@ vite.config.ts.timestamp-*
 postgres-data
 .yarn
 .yarnrc
-docker-compose.yml
-knexfile.ts
