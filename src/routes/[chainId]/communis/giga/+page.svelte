@@ -41,7 +41,7 @@
   })
   let mint = writable(0n)
   balanceCOMM.subscribe((val) => {
-    mint.set(val)
+    mint.set(val / factor)
   })
   let burn = writable(0n)
   balanceGCOMM.subscribe((val) => {
@@ -117,12 +117,12 @@
       <DecimalInput
         {decimals}
         text={ethers.formatUnits($mint, decimals)}
-        max={$balanceCOMM}
+        max={$balanceCOMM / factor}
         on:update={(e) => { mint.set(e.detail.value) }} />
       <Button
         class="px-3"
         color="alternative"
-        disabled={$mint === $balanceCOMM}
+        disabled={$mint === $balanceCOMM / factor || $balanceCOMM / factor === 0n}
         on:click={() => mint.set($balanceCOMM)}>MAX</Button>
       <Button
         color="primary" class="min-w-[100px]"
@@ -145,7 +145,7 @@
       <Button
         class="px-3"
         color="alternative"
-        disabled={$burn === $balanceGCOMM}
+        disabled={$burn === $balanceGCOMM || $burn === 0n}
         on:click={() => burn.set($balanceGCOMM)}>MAX</Button>
       <Button
         color="primary"
