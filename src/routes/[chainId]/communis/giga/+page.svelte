@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as ethers from 'ethers'
-	import { Button, ButtonGroup } from "flowbite-svelte";
+	import { Button, ButtonGroup, Tooltip } from "flowbite-svelte";
   import * as contracts from '../../../../stores/contracts'
   import * as web3Store from '../../../../stores/web3'
   import * as addresses from '../../../../stores/addresses'
@@ -100,6 +100,7 @@
   $: approvalWithCommas = $approval === uint256 ? approvalDecimal : numberWithCommas(approvalDecimal)
   $: mintWithCommas = numberWithCommas(ethers.formatUnits($mint, decimals))
   $: burnWithCommas = numberWithCommas(ethers.formatUnits($burn, decimals))
+  $: maxMintable = ($balanceCOMM > $allowance ? $balanceCOMM : $allowance) / factor
 </script>
 
 <div class="container m-auto flex justify-between max-w-3xl flex-col gap-2">
@@ -132,18 +133,21 @@
       <DecimalInput
         {decimals}
         text={mintWithCommas}
-        max={$balanceCOMM / factor}
+        max={maxMintable}
         on:update={(e) => { mint.set(e.detail.value) }} />
       <Button
         class="px-3"
         color="alternative"
-        disabled={$mint === $balanceCOMM / factor || $balanceCOMM / factor === 0n}
+        disabled={$mint === $balanceCOMM / factor || $balanceCOMM / factor === 0n || $allowance < factor}
         on:click={() => mint.set($balanceCOMM)}>MAX</Button>
       <Button
         color="primary" class="min-w-[100px]"
-        disabled={!$signer || $mint === 0n}
+        disabled={!$signer || $mint === 0n || $allowance < factor}
         on:click={runMint}>Mint</Button>
     </ButtonGroup>
+    {#if $allowance < factor}
+    <Tooltip placement="top-end">Please run approval before attempting to mint</Tooltip>
+    {/if}
     <div class="flex my-2 items-center">
       <span class="text-sm">{mintCOMMValue} $COMM</span>
       <IconChevronRight />
